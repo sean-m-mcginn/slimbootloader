@@ -86,6 +86,7 @@
 #include <Library/PciePm.h>
 #include <Library/PlatformInfo.h>
 #include <Library/PlatformHookLib.h>
+#include <Library/TimerLib.h>
 
 
 
@@ -905,6 +906,9 @@ BoardInit (
     Status = PcdSet32S (PcdAcpiTableTemplatePtr, (UINT32)(UINTN)mPlatformAcpiTables);
     break;
   case PostSiliconInit:
+    // if (GetCurrentBootPartition () == 0) {
+    //   MicroSecondDelay (20000000);
+    // }
     if (IsWdtFlagsSet(WDT_FLAG_TCC_DSO_IN_PROGRESS)) {
       WdtDisable (WDT_FLAG_TCC_DSO_IN_PROGRESS);
     }
@@ -1023,6 +1027,10 @@ BoardInit (
       // Enable EC's ACPI mode to control power to motherboard during Sleep (S3)
       //
       IoWrite16 (EC_C_PORT, EC_C_ACPI_ENABLE);
+    }
+
+    if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
+      HaltWatchDogTimer ();
     }
 
     break;

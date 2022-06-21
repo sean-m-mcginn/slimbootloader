@@ -361,7 +361,12 @@ SecStartup2 (
 
   // Extra initialization
   if (FlashMap != NULL) {
-    SetCurrentBootPartition ((FlashMap->Attributes & FLASH_MAP_ATTRIBUTES_BACKUP_REGION) ? 1 : 0);
+    if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
+      SetCurrentBootPartition (GetBootPartitionFromRegister ());
+    }
+    else {
+      SetCurrentBootPartition ((FlashMap->Attributes & FLASH_MAP_ATTRIBUTES_BACKUP_REGION) ? 1 : 0);
+    }
   }
 
   // Call board hook to enable debug

@@ -23,6 +23,7 @@
 #define B_ACPI_IO_OC_WDT_CTL_LCK                      BIT12
 #define B_ACPI_IO_OC_WDT_CTL_TOV_MASK                 0x3FF
 #define B_ACPI_IO_OC_WDT_CTL_SCRATCHPAD_MASK          0xFF0000
+#define BOOT_COUNT_MASK                               0xC0000
 
 
 /**
@@ -143,6 +144,25 @@ WdtSetScratchpad (
   IoWrite32 (WdtGetAddress (), Readback);
 }
 
+/**
+  Get WDT flags in scratchpad
+
+  @param[in] Flags             The scratchpad flags to get.
+  @retval UINT32               The flags specified.
+**/
+UINT32
+EFIAPI
+WdtGetScratchpad (
+  IN  UINT32  Flags
+  )
+{
+  UINT32  Readback;
+
+  Readback  = IoRead32 (WdtGetAddress ());
+  /* only get flagged bits from scratchpad */
+  Readback &= Flags & B_ACPI_IO_OC_WDT_CTL_SCRATCHPAD_MASK;
+  return Readback;
+}
 
 /**
   Returns if the previous reset is triggered by timer expiration.
@@ -238,3 +258,55 @@ IsWdtLocked (
   }
 }
 
+/**
+  Get the number of failed boots.
+
+  @retval UINT32              the number of boots
+
+**/
+UINT32
+EFIAPI
+GetFailedBootCount (
+  VOID
+  )
+{
+  return WdtGetScratchpad (BOOT_COUNT_MASK) >> 18;
+}
+
+/**
+  Increment the number of failed boots.
+**/
+VOID
+EFIAPI
+IncrementFailedBootCount (
+  VOID
+  )
+{
+  UINT32 ReadBack;
+
+  ReadBack = WdtGetScratchpad (BOOT_COUNT_MASK);
+
+  // Increment counter
+  ReadBack += (1 << 18);
+
+  // Set bits
+  WdtSetScratchpad ((ReadBack & BOOT_COUNT_MASK));
+
+  // Invert counter
+  ReadBack = ~ReadBack;
+
+  // Clear bits
+  WdtClearScratchpad ((ReadBack & BOOT_COUNT_MASK));
+}
+
+/**
+  Set the number of failed boots to 0.
+**/
+VOID
+EFIAPI
+ClearFailedBootCount (
+  VOID
+  )
+{
+  WdtClearScratchpad (BOOT_COUNT_MASK);
+}

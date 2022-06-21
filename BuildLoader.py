@@ -516,7 +516,7 @@ class Build(object):
 
         hs_offset = stage1_bins.find (HashStoreTable.HASH_STORE_SIGNATURE)
         if hs_offset < 0:
-            raise Exceptoin ("HashStoreTable not found in '%s'!" % os.path.basename(img_file))
+            raise Exception ("HashStoreTable not found in '%s'!" % os.path.basename(img_file))
 
         comp_name, part_name = get_redundant_info (img_file)
         if part_name:
@@ -911,16 +911,18 @@ class Build(object):
             os.path.join(self._fv_dir, 'STAGE1A.fd'),
             os.path.join(self._fv_dir, 'STAGE1A_B.fd'))
 
-        # Patch flashmap to indicate boot parititon
         fo = open(os.path.join(self._fv_dir, 'STAGE1A_B.fd'), 'r+b')
         bins = bytearray(fo.read())
-        fmapoff = bytes_to_value(bins[-8:-4]) - bytes_to_value(bins[-4:]) + self._board.STAGE1A_FV_OFFSET
-        fmaphdr = FLASH_MAP.from_buffer (bins, fmapoff)
-        if fmaphdr.sig != FLASH_MAP.FLASH_MAP_SIGNATURE:
-            raise Exception ('Failed to locate flash map in STAGE1A_B.fd !')
-        fmaphdr.attributes |=  fmaphdr.FLASH_MAP_ATTRIBUTES['BACKUP_REGION']
-        fo.seek(fmapoff)
-        fo.write(fmaphdr)
+
+        # Patch flashmap to indicate boot partiton
+        if not self._board.BUILD_RESILIENT_TS:
+            fmapoff = bytes_to_value(bins[-8:-4]) - bytes_to_value(bins[-4:]) + self._board.STAGE1A_FV_OFFSET
+            fmaphdr = FLASH_MAP.from_buffer (bins, fmapoff)
+            if fmaphdr.sig != FLASH_MAP.FLASH_MAP_SIGNATURE:
+                raise Exception ('Failed to locate flash map in STAGE1A_B.fd !')
+            fmaphdr.attributes |=  fmaphdr.FLASH_MAP_ATTRIBUTES['BACKUP_REGION']
+            fo.seek(fmapoff)
+            fo.write(fmaphdr)
 
         # Patch microcode base in FSP-T UPD
         if self._board.HAVE_FSP_BIN and self._board.TOP_SWAP_SIZE > 0:
@@ -958,7 +960,7 @@ class Build(object):
         stage1b_path   = os.path.join(self._fv_dir, 'STAGE1B.fd')
         stage1b_b_path = os.path.join(self._fv_dir, 'STAGE1B_B.fd')
 
-        if self._board.STAGE1B_XIP:
+        if self._board.STAGE1B_XIP and not self._board.BUILD_RESILIENT_TS:
             # Rebase stage1b.fd
             print("Rebasing STAGE1B_B")
             rebase_stage (stage1b_path, stage1b_b_path, -self._board.REDUNDANT_SIZE)

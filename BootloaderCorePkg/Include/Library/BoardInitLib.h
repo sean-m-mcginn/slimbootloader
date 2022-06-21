@@ -19,6 +19,27 @@
 #include <Guid/LoaderPlatformInfoGuid.h>
 #include <Service/PlatformService.h>
 
+
+/**
+  Get the boot partition number from TS register.
+
+  @retval    UINT8     Boot partion number (primary or secondary).
+
+**/
+UINT8
+GetBootPartitionFromRegister (
+  VOID
+  );
+
+/**
+  Update recovery-related data and react appropriately.
+**/
+VOID
+EFIAPI
+HandleRecovery (
+  VOID
+  );
+
 /**
   Board specific hook points.
 
@@ -45,11 +66,46 @@ UpdateFspConfig (
   );
 
 /**
-  Disable watch dog timer (Halt TCO timer).
+  Disable watch dog timer (Initialize TCO timer and halt it).
 **/
 VOID
 EFIAPI
 DisableWatchDogTimer (
+  VOID
+  );
+
+/**
+  Set up watch dog timer (Initialize TCO timer and clear reboot flag).
+**/
+VOID
+EFIAPI
+SetupWatchDogTimer (
+  VOID
+  );
+
+/**
+  Halt the watch dog timer (Halt the TCO timer).
+**/
+VOID
+HaltWatchDogTimer (
+  VOID
+  );
+
+/**
+  Check if TCO status indicates failure on last boot
+**/
+BOOLEAN
+EFIAPI
+WasPreviousBootFailure (
+  VOID
+  );
+
+/**
+  Clear TCO status
+**/
+VOID
+EFIAPI
+ClearBootStatus (
   VOID
   );
 

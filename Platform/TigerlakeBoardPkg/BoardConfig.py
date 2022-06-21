@@ -123,7 +123,7 @@ class Board(BaseBoard):
             self.PAYLOAD_SIZE         = 0x00024000
         else:
             self.STAGE1A_SIZE         = 0x00016000
-            self.STAGE1B_SIZE         = 0x00180000
+            self.STAGE1B_SIZE         = 0x00148000
             self.STAGE2_SIZE          = 0x00110000
             self.STAGE2_FD_SIZE       = 0x00200000
             self.PAYLOAD_SIZE         = 0x00080000
@@ -165,8 +165,16 @@ class Board(BaseBoard):
         self.FWUPDATE_SIZE        = 0x00020000 if self.ENABLE_FWU else 0
         self.OS_LOADER_FD_NUMBLK  = self.OS_LOADER_FD_SIZE // self.FLASH_BLOCK_SIZE
 
-        self.TOP_SWAP_SIZE        = 0x080000
-        self.REDUNDANT_SIZE       = 0x360000
+        self.BUILD_RESILIENT_TS      = 1
+        self.ENABLE_SBL_RESILIENCY   = 1
+        self.UCODE_SLOT_SIZE         = 0x0001C000
+
+        if self.BUILD_RESILIENT_TS:
+            self.TOP_SWAP_SIZE        = 0x200000
+            self.REDUNDANT_SIZE       = 0x1E0000
+        else:
+            self.TOP_SWAP_SIZE        = 0x080000
+            self.REDUNDANT_SIZE       = 0x360000
 
         self.SIIPFW_SIZE = 0x1000
         self.ENABLE_TCC  = 0
@@ -182,7 +190,10 @@ class Board(BaseBoard):
             self.TMAC_SIZE = 0x00001000
             self.SIIPFW_SIZE += self.TMAC_SIZE
 
-        Redundant_Components_Size = self.UCODE_SIZE + self.STAGE2_SIZE + self.STAGE1B_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE + self.KEYHASH_SIZE
+        if self.BUILD_RESILIENT_TS:
+            Redundant_Components_Size = self.STAGE2_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE
+        else:
+            Redundant_Components_Size = self.UCODE_SIZE + self.STAGE2_SIZE + self.STAGE1B_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE + self.KEYHASH_SIZE
         if Redundant_Components_Size > self.REDUNDANT_SIZE:
             raise Exception ('Redundant region size 0x%x is smaller than required components size 0x%x!' % (self.REDUNDANT_SIZE, Redundant_Components_Size))
         self.NON_VOLATILE_SIZE    = 0x001000
@@ -211,7 +222,10 @@ class Board(BaseBoard):
         self.ACM_SIZE             = 0x00040000 + self.KM_SIZE + self.BPM_SIZE
         # adjust ACM_SIZE to meet 256KB alignment (to align 256KB ACM size)
         if self.ACM_SIZE > 0:
-            acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE
+            if self.BUILD_RESILIENT_TS:
+                acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE - self.KEYHASH_SIZE
+            else:
+                acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE
             acm_btm = acm_top - self.ACM_SIZE
             acm_btm = (acm_btm & 0xFFFC0000)
             self.ACM_SIZE     = acm_top - acm_btm
@@ -288,6 +302,7 @@ class Board(BaseBoard):
             'GpioLib|Silicon/CommonSocPkg/Library/GpioLib/GpioLib.inf',
             'GpioSiLib|Silicon/$(PCH_PKG_NAME)/Library/GpioSiLib/GpioSiLib.inf',
             'WatchDogTimerLib|Silicon/CommonSocPkg/Library/WatchDogTimerLib/WatchDogTimerLib.inf',
+            'AcpiTimerLib|BootloaderCommonPkg/Library/AcpiTimerLib/AcpiTimerLib.inf'
         ]
 
         if self.BUILD_CSME_UPDATE_DRIVER:
@@ -409,6 +424,26 @@ class Board(BaseBoard):
                     ('PAYLOAD.bin',      'Lz4',    self.PAYLOAD_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
+        ])
+
+        if self.BUILD_RESILIENT_TS:
+            img_list.extend ([
+                ('REDUNDANT_A.bin', [
+                    ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, STITCH_OPS.MODE_FILE_PAD | fwu_flag,  STITCH_OPS.MODE_POS_TAIL),
+                    ('CFGDATA.bin'  , ''         , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD | cfg_flag, STITCH_OPS.MODE_POS_TAIL),
+                    ]
+                ),
+
+                ('REDUNDANT_B.bin', [
+                    ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, STITCH_OPS.MODE_FILE_PAD | fwu_flag,  STITCH_OPS.MODE_POS_TAIL),
+                    ('CFGDATA.bin'  , ''         , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD | cfg_flag, STITCH_OPS.MODE_POS_TAIL),
+                    ]
+                ),
+            ])
+        else:
+            img_list.extend ([
                 ('REDUNDANT_A.bin', [
                     ('UCODE.bin'    ,  ''        , self.UCODE_SIZE,    STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
@@ -428,6 +463,31 @@ class Board(BaseBoard):
                     ('STAGE1B_B.fd' ,  ''        , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
+            ])
+
+        if self.BUILD_RESILIENT_TS:
+            img_list.extend ([
+                ('TOP_SWAP_A.bin', [
+                    ('STAGE1B_A.fd' ,  ''        , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('UCODE.bin'    ,  ''        , self.UCODE_SIZE,    STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('ACM.bin',         '',     self.ACM_SIZE,      STITCH_OPS.MODE_FILE_NOP | acm_flag,  STITCH_OPS.MODE_POS_TAIL),
+                    ('KEYHASH.bin'  , ''         , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('DIAGNOSTICACM.bin',        '',     self.DIAGNOSTICACM_SIZE,     STITCH_OPS.MODE_FILE_NOP | diagnosticacm_flag, STITCH_OPS.MODE_POS_TAIL),
+                    ('STAGE1A_A.fd',    '',     self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP,             STITCH_OPS.MODE_POS_TAIL),
+                    ]
+                ),
+                ('TOP_SWAP_B.bin', [
+                    ('STAGE1B_B.fd' ,  ''        , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('UCODE.bin'    ,  ''        , self.UCODE_SIZE,    STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('ACM.bin',         '',     self.ACM_SIZE,      STITCH_OPS.MODE_FILE_NOP | acm_flag,  STITCH_OPS.MODE_POS_TAIL),
+                    ('KEYHASH.bin'  , ''         , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('DIAGNOSTICACM.bin',        '',     self.DIAGNOSTICACM_SIZE,     STITCH_OPS.MODE_FILE_NOP | diagnosticacm_flag, STITCH_OPS.MODE_POS_TAIL),
+                    ('STAGE1A_B.fd',    '',     self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP,             STITCH_OPS.MODE_POS_TAIL),
+                    ]
+                ),
+            ])
+        else:
+            img_list.extend ([
                 ('TOP_SWAP_A.bin', [
                     ('ACM.bin',         '',     self.ACM_SIZE,      STITCH_OPS.MODE_FILE_NOP | acm_flag,  STITCH_OPS.MODE_POS_TAIL),
                     ('DIAGNOSTICACM.bin',        '',     self.DIAGNOSTICACM_SIZE,     STITCH_OPS.MODE_FILE_NOP | diagnosticacm_flag, STITCH_OPS.MODE_POS_TAIL),
@@ -440,15 +500,18 @@ class Board(BaseBoard):
                     ('STAGE1A_B.fd',    '',     self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP,             STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
-                ('SlimBootloader.bin', [
-                    ('NON_VOLATILE.bin'  , '' , self.NON_VOLATILE_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
-                    ('NON_REDUNDANT.bin' , '' , self.NON_REDUNDANT_SIZE, STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
-                    ('REDUNDANT_B.bin'   , '' , self.REDUNDANT_SIZE,     STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
-                    ('REDUNDANT_A.bin'   , '' , self.REDUNDANT_SIZE,     STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
-                    ('TOP_SWAP_B.bin'    , '' , self.TOP_SWAP_SIZE,      STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
-                    ('TOP_SWAP_A.bin'    , '' , self.TOP_SWAP_SIZE,      STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
-                    ]
-                ),
+            ])
+
+        img_list.extend ([
+            ('SlimBootloader.bin', [
+                ('NON_VOLATILE.bin'  , '' , self.NON_VOLATILE_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
+                ('NON_REDUNDANT.bin' , '' , self.NON_REDUNDANT_SIZE, STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
+                ('REDUNDANT_B.bin'   , '' , self.REDUNDANT_SIZE,     STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
+                ('REDUNDANT_A.bin'   , '' , self.REDUNDANT_SIZE,     STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
+                ('TOP_SWAP_B.bin'    , '' , self.TOP_SWAP_SIZE,      STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
+                ('TOP_SWAP_A.bin'    , '' , self.TOP_SWAP_SIZE,      STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
+                ]
+            ),
         ])
 
         return img_list

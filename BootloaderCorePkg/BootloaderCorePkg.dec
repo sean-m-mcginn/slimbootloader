@@ -158,6 +158,10 @@
   # NOTE: some features might be disabled when ENABLE_FAST_BOOT is set.
   gPlatformModuleTokenSpaceGuid.PcdFastBootEnabled        |  FALSE     | BOOLEAN| 0x200000F2
 
+  # Resiliency-Related Flags
+  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled       |  FALSE     | BOOLEAN| 0x200000F3
+  gPlatformModuleTokenSpaceGuid.PcdTopSwapBuiltForResiliency  |  FALSE     | BOOLEAN| 0x200000F4
+
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   #

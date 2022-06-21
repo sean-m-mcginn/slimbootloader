@@ -30,7 +30,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/ConsoleOutLib.h>
 #include <Guid/OsBootOptionGuid.h>
 #include <Library/BootGuardLib.h>
+#include <Library/SocInitLib.h>
+#include <Library/WatchDogTimerLib.h>
 #include "FirmwareUpdateHelper.h"
+
+#define  BASE_4GB  0x0000000100000000ULL
 
 UINT32   mSblImageBiosRgnOffset;
 
@@ -1163,6 +1167,73 @@ InitFirmwareUpdate (
   return EFI_SUCCESS;
 }
 
+
+/**
+  Try to recover a working boot partition.
+
+  @retval  EFI_SUCCESS          The operation completed successfully.
+  @retval  others               There is error happening.
+**/
+EFI_STATUS
+InitFirmwareRecovery (
+  VOID
+)
+{
+  FLASH_MAP                   *FlashMap;
+  EFI_STATUS                  Status;
+  UINT32                      TopSwapRegionSize;
+  UINT32                      RedundantRegionSize;
+  UINT32                      TopSwapPrimaryAddress;
+  UINT32                      TopSwapBackupAddress;
+  UINT32                      RedundantPrimaryAddress;
+  UINT32                      RedundantBackupAddress;
+  BOOLEAN                     IsBackupUpdate;
+
+  FlashMap = GetFlashMapPtr ();
+  if (FlashMap == NULL) {
+    DEBUG((DEBUG_INFO, "Flash map not found!\n"));
+    return EFI_NOT_FOUND;
+  }
+
+  Status = GetRegionInfo (&TopSwapRegionSize, &RedundantRegionSize, NULL);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "GetRegionInfo, Status = 0x%x\n", Status));
+    return Status;
+  }
+
+  TopSwapPrimaryAddress = FlashMap->RomSize - TopSwapRegionSize;
+  TopSwapBackupAddress = TopSwapPrimaryAddress - TopSwapRegionSize;
+  RedundantPrimaryAddress = TopSwapBackupAddress - RedundantRegionSize;
+  RedundantBackupAddress = RedundantPrimaryAddress - RedundantRegionSize;
+
+  IsBackupUpdate = GetCurrentBootPartition() == 0;
+
+  DEBUG ((DEBUG_ERROR, "Copying top swap....\n"));
+  Status = CopyRegionBlock (TopSwapPrimaryAddress, TopSwapBackupAddress, TopSwapRegionSize, IsBackupUpdate);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "CopyRegionBlock, Status = 0x%x\n", Status));
+    return Status;
+  }
+
+  DEBUG ((DEBUG_ERROR, "Copying redundant....\n"));
+  Status = CopyRegionBlock (RedundantPrimaryAddress, RedundantBackupAddress, RedundantRegionSize, IsBackupUpdate);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "CopyRegionBlock, Status = 0x%x\n", Status));
+    return Status;
+  }
+
+  ClearFailedBootCount ();
+
+  // Stop the update process since it's a bad update
+  if (IsBackupUpdate) {
+    SetStateMachineFlag (FW_UPDATE_SM_DONE);
+  }
+
+  SetBootPartition (PrimaryPartition);
+
+  return Status;
+}
+
 /**
   Get all region sizes from flash map.
 
@@ -1201,6 +1272,7 @@ GetRegionInfo (
     *NonRedundantRegionSize = GetRegionOffsetSize (FlashMap, FLASH_MAP_FLAGS_NON_REDUNDANT_REGION, NULL);
   }
   return EFI_SUCCESS;
+
 }
 
 /**
@@ -1347,17 +1419,26 @@ PayloadMain (
   (VOID) PcdSet32S (PcdFwUpdStatusBase, mSblImageBiosRgnOffset + (FlashMap->RomSize - (~RsvdBase + 1)));
 
   //
-  // Perform firmware update
+  // Perform firmware recovery/update
   //
-  Status = InitFirmwareUpdate ();
-  if (EFI_ERROR (Status)) {
-    if (Status != EFI_ALREADY_STARTED) {
-      DEBUG((DEBUG_ERROR, "Firmware update failed with Status = %r\n", Status));
-    } else {
-      //
-      // This case happens when firmware update is successfully completed
-      //
-      Status = EFI_SUCCESS;
+  if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency) && GetFailedBootCount () >= 3) {
+    DEBUG((DEBUG_ERROR, "Triggered FW recovery!\n"));
+    Status = InitFirmwareRecovery ();
+    // Need to clear out update flags after BP01 recovery
+    if (EFI_ERROR (Status)) {
+      DEBUG((DEBUG_ERROR, "Firmware recovery failed with Status = %r\n", Status));
+    }
+  } else {
+    Status = InitFirmwareUpdate ();
+    if (EFI_ERROR (Status)) {
+      if (Status != EFI_ALREADY_STARTED) {
+        DEBUG((DEBUG_ERROR, "Firmware update failed with Status = %r\n", Status));
+      } else {
+        //
+        // This case happens when firmware update is successfully completed
+        //
+        Status = EFI_SUCCESS;
+      }
     }
   }
 

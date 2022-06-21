@@ -53,3 +53,5 @@
   gPlatformModuleTokenSpaceGuid.PcdPayloadBase
   gPlatformModuleTokenSpaceGuid.PcdPciMmcfgBase
   gPlatformCommonLibTokenSpaceGuid.PcdDebugPortNumber
+  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled
+  gPlatformModuleTokenSpaceGuid.PcdTopSwapBuiltForResiliency

@@ -285,6 +285,133 @@ GetVersionfromFv (
 }
 
 /**
+  Copy a block of data from one address to another.
+
+  This function reads a block of data from one address and writes it to
+  another. It also verifies that the block of data is written to the
+  destination address.
+
+  @param[in] DestAdress       The boot media address to be written to.
+  @param[in] SrcAddress       The boot media address to be read from.
+  @param[in] Length           The length of data to write to boot media.
+  @param[in] Reverse          Indicates if copy is from primary to backup.
+
+  @retval  EFI_SUCCESS        Update successfully.
+  @retval  others             Error happening when updating.
+**/
+EFI_STATUS
+EFIAPI
+CopyRegionBlock (
+  IN  UINT64    PrimaryAddress,
+  IN  UINT64    BackupAddress,
+  IN  UINT32    Length,
+  IN  BOOLEAN   Reverse
+  )
+{
+  EFI_STATUS    Status;
+  UINT64        SrcAddress;
+  UINT64        DestAddress;
+  UINT8         *DestBuffer;
+  UINT8         *SrcBuffer;
+  UINT32        Count;
+  UINT32        BlockLen;
+
+  if (Reverse) {
+    SrcAddress = PrimaryAddress;
+    DestAddress = BackupAddress;
+  } else {
+    SrcAddress = BackupAddress;
+    DestAddress = PrimaryAddress;
+  }
+
+  if (Length == 0) {
+    return EFI_SUCCESS;
+  }
+
+  DestBuffer = AllocatePages (EFI_SIZE_TO_PAGES (SIZE_4KB));
+  if (DestBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  SrcBuffer = AllocatePages (EFI_SIZE_TO_PAGES (SIZE_4KB));
+  if (SrcBuffer == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  BlockLen = SIZE_4KB;
+
+  //
+  // Read, compare, erase, write, read, compare
+  //
+  for (Count = 0; Count < Length; Count += BlockLen) {
+    //
+    // If updating region less than 4K bytes,
+    // adjust the block length to size remaining, i.e less than 4k
+    //
+    if (Count + BlockLen > Length) {
+      BlockLen = Length - Count;
+    }
+    Status = BootMediaRead(DestAddress + Count, BlockLen, DestBuffer);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "BootMediaRead.  readaddr: 0x%llx, Status = 0x%x\n", DestAddress + Count, Status));
+      goto End;
+    }
+
+    Status = BootMediaRead(SrcAddress + Count, BlockLen, SrcBuffer);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "BootMediaRead.  readaddr: 0x%llx, Status = 0x%x\n", SrcAddress + Count, Status));
+      goto End;
+    }
+
+    if (CompareMem (DestBuffer, SrcBuffer, BlockLen) == 0) {
+      DEBUG ((DEBUG_INIT, "."));
+      continue;
+    }
+
+    //
+    // Erase the boot media
+    //
+    DEBUG ((DEBUG_INIT, "x"));
+    Status = BootMediaErase ((UINT32) (DestAddress + Count),  BlockLen);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "ERROR: in BootMediaErase. Status = 0x%x\n", Status));
+      goto End;
+    }
+
+    //
+    // Write to the boot media
+    //
+    Status = BootMediaWrite ((UINT32) (DestAddress + Count),  BlockLen, SrcBuffer);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "ERROR: in BootDeviceWrite. Status = 0x%x\n", Status));
+      goto End;
+    }
+
+    //
+    // Verify the written data
+    //
+    Status = BootMediaRead (DestAddress + Count, BlockLen, DestBuffer);
+    if (CompareMem (SrcBuffer, DestBuffer, BlockLen) != 0) {
+      DEBUG ((DEBUG_ERROR, "Verify Error !\n"));
+      Status = EFI_DEVICE_ERROR;
+      goto End;
+    }
+  }
+
+End:
+  DEBUG ((DEBUG_INIT, "\n"));
+  if (DestBuffer != NULL) {
+    FreePages (DestBuffer, EFI_SIZE_TO_PAGES (SIZE_4KB));
+  }
+
+  if (SrcBuffer != NULL) {
+    FreePages (SrcBuffer, EFI_SIZE_TO_PAGES (SIZE_4KB));
+  }
+
+  return Status;
+}
+
+/**
   Update a region block.
 
   This is the acture function to update boot meia. It will erase boot device,

@@ -49,6 +49,7 @@
   BoardSupportLib
   WatchDogTimerLib
   TccLib
+  SocInitLib
 
 [Guids]
 
@@ -63,3 +64,5 @@
   gPlatformCommonLibTokenSpaceGuid.PcdMeasuredBootEnabled
   gPlatformModuleTokenSpaceGuid.PcdFastBootEnabled
   gPlatformCommonLibTokenSpaceGuid.PcdTccEnabled
+  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled
+  gPlatformModuleTokenSpaceGuid.PcdTopSwapBuiltForResiliency

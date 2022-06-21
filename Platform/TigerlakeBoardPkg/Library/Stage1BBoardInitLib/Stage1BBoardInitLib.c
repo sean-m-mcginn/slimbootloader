@@ -772,6 +772,136 @@ GetPlatformPowerState (
 }
 
 /**
+  Switch between the boot partitions.
+
+  This function will use platform specific method of switching
+  between primary and backup partitions.
+
+  @param[in] Partition        Partition to select
+
+  @retval  EFI_SUCCESS        Switched to desired partition successfully.
+  @retval  others             Error happening.
+**/
+EFI_STATUS
+SetBootPartition (
+  IN BOOT_PARTITION  Partition
+  )
+{
+  UINTN     P2sbBase;
+  UINT32    P2sbBar;
+  UINT32    TopSwapReg;
+  UINT32    Data32;
+  BOOLEAN   P2sbIsHidden;
+
+  //
+  // Get Top swap register Bit0 in PCH Private Configuration Space.
+  //
+  P2sbBase   = MM_PCI_ADDRESS (0, PCI_DEVICE_NUMBER_PCH_LPC, 1, 0); // P2SB device base
+  P2sbIsHidden = FALSE;
+
+  if (MmioRead16 (P2sbBase) == 0xFFFF) {
+    //
+    // unhide P2SB
+    //
+    MmioWrite8 (P2sbBase + 0xE1, 0);
+    P2sbIsHidden = TRUE;
+    DEBUG ((DEBUG_INFO, "P2sb is hidden, unhide it\n"));
+  }
+
+  P2sbBar    = MmioRead32 (P2sbBase + 0x10);
+  P2sbBar  &= 0xFFFFFFF0;
+  ASSERT (P2sbBar != 0xFFFFFFF0);
+
+  TopSwapReg = P2sbBar | ((PID_RTC_HOST) << 16) | (UINT16)(R_RTC_PCR_BUC);
+  Data32    = MmioRead32 (TopSwapReg);
+  DEBUG ((DEBUG_INFO, "P2sbBar=0x%x, Data32=0x%x\n", P2sbBar, Data32));
+
+  if (Partition == BackupPartition) {
+    //
+    // Switch to back up parition - Set Top Swap
+    //
+    Data32 |= BIT0;
+  } else if (Partition == PrimaryPartition) {
+    //
+    // Switch to primary parition - Clear Top Swap
+    //
+    Data32 &= ~BIT0;
+  }
+
+  MmioWrite32 (TopSwapReg, Data32);
+  DEBUG ((DEBUG_INFO, "write Data32=0x%x\n", Data32));
+  Data32 = MmioRead32 (TopSwapReg);
+
+  if (P2sbIsHidden) {
+    //
+    // Hide P2SB
+    //
+    MmioWrite8 (P2sbBase + 0xE1, BIT0);
+    DEBUG ((DEBUG_INFO, "Hide p2sb again.\n"));
+  }
+
+  DEBUG ((DEBUG_INFO, "Read it to ensure data is written. Data32=0x%x\n", Data32));
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Count boot failures and react appropriately.
+
+  @param[in] IsSwitchToBackup     Whether to switch to backup partition
+                                  (as opposed to primary partition) when
+                                  failure count reaches threshold.
+**/
+VOID
+EFIAPI
+HandleBootFailures (
+  BOOLEAN IsSwitchToBackup
+)
+{
+  if (WasPreviousBootFailure ()) {
+    ClearBootStatus ();
+    IncrementFailedBootCount ();
+    DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", GetFailedBootCount ()));
+    if (GetFailedBootCount () >= 3) {
+      DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching partitions...\n"));
+      SetBootPartition (IsSwitchToBackup ? BackupPartition : PrimaryPartition);
+      ResetSystem (EfiResetCold);
+    }
+  }
+}
+
+/**
+  Update recovery-related data and react appropriately.
+**/
+VOID
+EFIAPI
+HandleRecovery (
+  VOID
+  )
+{
+  if (GetBootMode () == BOOT_ON_FLASH_UPDATE) {
+    if (GetCurrentBootPartition () == 1) {
+      HandleBootFailures (FALSE);
+    }
+  } else {
+    if (FindNvsData () == NULL) {
+      DEBUG ((DEBUG_INFO, "Setting up boot failure counters on initial boot...\n"));
+      ClearBootStatus ();
+      ClearFailedBootCount ();
+    } else {
+      if (GetCurrentBootPartition () == 1) {
+        if (GetFailedBootCount () >= 3) {
+          DEBUG ((DEBUG_INFO, "Switching to firmware update mode to fix corrupted partition...\n"));
+          SetBootMode (BOOT_ON_FLASH_UPDATE);
+        }
+      } else {
+        HandleBootFailures (TRUE);
+      }
+    }
+  }
+}
+
+/**
   Initialize Board specific things in Stage1 Phase
 
   @param[in]  InitPhase            Indicates a board init phase to be initialized
@@ -840,6 +970,9 @@ DEBUG_CODE_END();
     }
     PlatformNameInit ();
     SetBootMode (IsFirmwareUpdate() ? BOOT_ON_FLASH_UPDATE : GetPlatformPowerState());
+    if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
+      HandleRecovery ();
+    }
     PlatformFeaturesInit ();
     break;
   case PreMemoryInit:
