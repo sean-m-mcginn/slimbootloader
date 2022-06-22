@@ -34,8 +34,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/WatchDogTimerLib.h>
 #include "FirmwareUpdateHelper.h"
 
-#define  BASE_4GB  0x0000000100000000ULL
-
 UINT32   mSblImageBiosRgnOffset;
 
 /**

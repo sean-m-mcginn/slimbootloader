@@ -884,11 +884,6 @@ HandleRecovery (
       HandleBootFailures (FALSE);
     }
   } else {
-    if (FindNvsData () == NULL) {
-      DEBUG ((DEBUG_INFO, "Setting up boot failure counters on initial boot...\n"));
-      ClearBootStatus ();
-      ClearFailedBootCount ();
-    } else {
       if (GetCurrentBootPartition () == 1) {
         if (GetFailedBootCount () >= 3) {
           DEBUG ((DEBUG_INFO, "Switching to firmware update mode to fix corrupted partition...\n"));
@@ -897,7 +892,6 @@ HandleRecovery (
       } else {
         HandleBootFailures (TRUE);
       }
-    }
   }
 }
 
