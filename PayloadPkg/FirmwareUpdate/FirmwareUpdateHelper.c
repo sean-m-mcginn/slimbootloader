@@ -183,6 +183,28 @@ BootMediaErase (
 }
 
 /**
+  This function erases blocks from the SPI device based on flash region type.
+
+  @param[in] FlashRegionType      The Flash Region type for flash cycle which is listed in the Descriptor.
+  @param[in]  Address             The block address in the FlashRegionAll to read from on the SPI.
+  @param[in]  ByteCount           Size of the region to erase in bytes.
+
+  @retval EFI_SUCCESS             Erase completes successfully.
+  @retval others                  Device error, the command aborts abnormally.
+
+**/
+EFI_STATUS
+EFIAPI
+BootMediaEraseByType (
+  IN     FLASH_REGION_TYPE  FlashRegionType,
+  IN     UINT64             Address,
+  IN     UINT32             ByteCount
+  )
+{
+  return mFwuSpiService->SpiErase (FlashRegionType, (UINT32)Address, ByteCount);
+}
+
+/**
   Get SVN from existing firmware
 
   This routine get SPI base address and read first four bytes
@@ -290,6 +312,7 @@ GetVersionfromFv (
   This is the acture function to update boot meia. It will erase boot device,
   write new data to boot device, and verify the written data.
 
+  @param[in] FlashRegionType  The region type to update (e.g. BIOS).
   @param[in] Address          The boot media address to be update.
   @param[in] Buffer           The source buffer to write to the boot media.
   @param[in] Length           The length of data to write to boot media.
@@ -299,10 +322,11 @@ GetVersionfromFv (
 **/
 EFI_STATUS
 EFIAPI
-UpdateRegionBlock (
-  IN  UINT64    Address,
-  IN  VOID      *Buffer,
-  IN  UINT32    Length
+UpdateRegionBlockByType (
+  IN  FLASH_REGION_TYPE   FlashRegionType,
+  IN  UINT64              Address,
+  IN  VOID                *Buffer,
+  IN  UINT32              Length
   )
 {
   EFI_STATUS    Status;
@@ -336,9 +360,9 @@ UpdateRegionBlock (
     if (Count + BlockLen > Length) {
       BlockLen = Length - Count;
     }
-    Status = BootMediaRead(Address + Count, BlockLen, ReadBuffer);
+    Status = BootMediaReadByType (FlashRegionType, Address + Count, BlockLen, ReadBuffer);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "BootMediaRead.  readaddr: 0x%llx, Status = 0x%x\n", Address + Count, Status));
+      DEBUG ((DEBUG_ERROR, "BootMediaReadByType.  readaddr: 0x%llx, Status = 0x%x\n", Address + Count, Status));
       goto End;
     }
 
@@ -352,25 +376,25 @@ UpdateRegionBlock (
     // Block length for erase is always 4K bytes
     //
     DEBUG ((DEBUG_INIT, "x"));
-    Status = BootMediaErase ((UINT32) (Address + Count),  SIZE_4KB);
+    Status = BootMediaEraseByType (FlashRegionType, (UINT32) (Address + Count),  SIZE_4KB);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "ERROR: in BootMediaErase. Status = 0x%x\n", Status));
+      DEBUG ((DEBUG_ERROR, "ERROR: in BootMediaEraseByType. Status = 0x%x\n", Status));
       goto End;
     }
 
     //
     // Write to the boot media
     //
-    Status = BootMediaWrite ((UINT32) (Address + Count),  BlockLen, Src + Count);
+    Status = BootMediaWriteByType (FlashRegionType, (UINT32) (Address + Count),  BlockLen, Src + Count);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "ERROR: in BootDeviceWrite. Status = 0x%x\n", Status));
+      DEBUG ((DEBUG_ERROR, "ERROR: in BootMediaWriteByType. Status = 0x%x\n", Status));
       goto End;
     }
 
     //
     // Verify the written data
     //
-    Status = BootMediaRead (Address + Count, BlockLen, ReadBuffer);
+    Status = BootMediaReadByType (FlashRegionType, Address + Count, BlockLen, ReadBuffer);
     if (CompareMem (Src + Count, ReadBuffer, BlockLen) != 0) {
       DEBUG ((DEBUG_ERROR, "Verify Error !\n"));
       Status = EFI_DEVICE_ERROR;
@@ -387,10 +411,11 @@ End:
 }
 
 /**
-  Update a boot region.
+  Update a boot region by region type.
 
   This function also output the update process info.
 
+  @param[in] FlashRegionType  The region type to update (e.g. BIOS).
   @param[in] UpdateRegion     The detail information for this region to update.
   @param[in] WrittenSize      The data size has been written before this region.
   @param[in] TotalSize        The total size need to write for the partition.
@@ -399,7 +424,8 @@ End:
   @retval  others             Error happening when updating boot region.
 **/
 EFI_STATUS
-UpdateBootRegion (
+UpdateBootRegionByType (
+  IN  FLASH_REGION_TYPE          FlashRegionType,
   IN  FIRMWARE_UPDATE_REGION     *UpdateRegion,
   IN  UINT32                     WrittenSize,
   IN  UINT32                     TotalSize
@@ -429,7 +455,7 @@ UpdateBootRegion (
       }
     }
     ConsolePrint ("Updating 0x%08llx, Size:0x%06x\n", UpdateAddress, UpdateBlockSize);
-    Status = UpdateRegionBlock (UpdateAddress, Buffer, UpdateBlockSize);
+    Status = UpdateRegionBlockByType (FlashRegionType, UpdateAddress, Buffer, UpdateBlockSize);
     if (EFI_ERROR (Status)) {
       ConsolePrint ("\nFailed at address 0x%08llx, status: %r\n", UpdateAddress, Status);
       return Status;
@@ -480,9 +506,9 @@ UpdateBootPartition (
     // Adjust the offset to be relative to BIOS region start
     CopyMem (&TempRegion, &UpdatePartition->FwRegion[Index], sizeof(FIRMWARE_UPDATE_REGION));
     TempRegion.ToUpdateAddress += GetRomImageOffsetInBiosRegion ();
-    Status = UpdateBootRegion (&TempRegion, WrittenSize, TotalUpdateSize);
+    Status = UpdateBootRegionByType (FlashRegionBios, &TempRegion, WrittenSize, TotalUpdateSize);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "UpdateBootRegion failed! Status = 0x%x\n", Status));
+      DEBUG ((DEBUG_ERROR, "UpdateBootRegionByType failed! Status = 0x%x\n", Status));
       return Status;
     }
     WrittenSize += TempRegion.UpdateSize;
@@ -492,33 +518,35 @@ UpdateBootPartition (
 }
 
 /**
-  Perform full BIOS region update.
+  Perform full region update.
 
+  @param[in] RgnType        Region type to update
   @param[in] ImageHdr       Pointer to fw mgmt capsule Image header
 
   @retval  EFI_SUCCESS      Update successful.
   @retval  other            error occurred during firmware update
 **/
 EFI_STATUS
-UpdateFullBiosRegion (
-  IN EFI_FW_MGMT_CAP_IMAGE_HEADER  *ImageHdr
+UpdateFullRegion (
+  IN FLASH_REGION_TYPE              RgnType,
+  IN EFI_FW_MGMT_CAP_IMAGE_HEADER   *ImageHdr
   )
 {
   EFI_STATUS               Status;
-  UINT32                   BiosRgnBase;
-  UINT32                   BiosRgnSize;
+  UINT32                   RgnBase;
+  UINT32                   RgnSize;
   FIRMWARE_UPDATE_REGION   UpdateRegion;
 
-  DEBUG((DEBUG_INFO, "Update full BIOS region\n"));
-  Status = BootMediaGetRegion (FlashRegionBios, &BiosRgnBase, &BiosRgnSize);
+  DEBUG((DEBUG_INFO, "Update full %r\n", RgnType));
+  Status = BootMediaGetRegion (RgnType, &RgnBase, &RgnSize);
   if (!EFI_ERROR (Status)) {
-    if (ImageHdr->UpdateImageSize > BiosRgnSize) {
-      DEBUG((DEBUG_ERROR, "BIOS image in capsule is bigger than BIOS region on flash\n"));
+    if (ImageHdr->UpdateImageSize > RgnSize) {
+      DEBUG((DEBUG_ERROR, "%r image in capsule is bigger than region on flash\n", RgnType));
       Status = EFI_UNSUPPORTED;
     }
   }
   if (ALIGN_DOWN(ImageHdr->UpdateImageSize, SIZE_4KB) != ImageHdr->UpdateImageSize) {
-    DEBUG((DEBUG_ERROR, "BIOS image size in capsule is not 4KB aligned\n"));
+    DEBUG((DEBUG_ERROR, "%r image size in capsule is not 4KB aligned\n", RgnType));
     Status = EFI_UNSUPPORTED;
   }
   if (EFI_ERROR (Status)) {
@@ -526,10 +554,10 @@ UpdateFullBiosRegion (
   }
 
   ZeroMem (&UpdateRegion, sizeof(UpdateRegion));
-  UpdateRegion.ToUpdateAddress = BiosRgnSize - ImageHdr->UpdateImageSize;
+  UpdateRegion.ToUpdateAddress = RgnSize - ImageHdr->UpdateImageSize;
   UpdateRegion.UpdateSize      = ImageHdr->UpdateImageSize;
   UpdateRegion.SourceAddress   = (UINT8 *)((UINTN)ImageHdr + sizeof(EFI_FW_MGMT_CAP_IMAGE_HEADER));
-  Status = UpdateBootRegion (&UpdateRegion, 0, UpdateRegion.UpdateSize);
+  Status = UpdateBootRegionByType (RgnType, &UpdateRegion, 0, UpdateRegion.UpdateSize);
   return Status;
 }
 

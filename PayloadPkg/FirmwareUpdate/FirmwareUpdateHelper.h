@@ -34,10 +34,11 @@ UpdateRegionBlock (
   );
 
 /**
-  Update a boot region.
+  Update a boot region by region type.
 
   This function also output the update process info.
 
+  @param[in] FlashRegionType  The region type to update (e.g. BIOS).
   @param[in] UpdateRegion     The detail information for this region to update.
   @param[in] WrittenSize      The data size has been written before this region.
   @param[in] TotalSize        The total size need to write for the partition.
@@ -46,7 +47,8 @@ UpdateRegionBlock (
   @retval  others             Error happening when updating boot region.
 **/
 EFI_STATUS
-UpdateBootRegion (
+UpdateBootRegionByType (
+  IN  FLASH_REGION_TYPE          FlashRegionType,
   IN  FIRMWARE_UPDATE_REGION     *UpdateRegion,
   IN  UINT32                     WrittenSize,
   IN  UINT32                     TotalSize
@@ -140,16 +142,18 @@ AfterUpdateEnforceFwUpdatePolicy (
  );
 
 /**
-  Perform full BIOS region update.
+  Perform full region update.
 
+  @param[in] RgnType        Region type to update
   @param[in] ImageHdr       Pointer to fw mgmt capsule Image header
 
   @retval  EFI_SUCCESS      Update successful.
   @retval  other            error occurred during firmware update
 **/
 EFI_STATUS
-UpdateFullBiosRegion (
-  IN EFI_FW_MGMT_CAP_IMAGE_HEADER  *ImageHdr
+UpdateFullRegion (
+  IN FLASH_REGION_TYPE              RgnType,
+  IN EFI_FW_MGMT_CAP_IMAGE_HEADER   *ImageHdr
   );
 
 /**

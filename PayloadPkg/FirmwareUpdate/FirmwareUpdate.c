@@ -954,7 +954,7 @@ ApplyFwImage (
   switch (Signature) {
   case FW_UPDATE_COMP_BIOS_REGION:
     if ((CapHdr->CapsuleFlags & CAPSULE_FLAG_FORCE_BIOS_UPDATE) != 0) {
-      Status = UpdateFullBiosRegion (ImageHdr);
+      Status = UpdateFullRegion (FlashRegionBios, ImageHdr);
       *ResetRequired = TRUE;
     } else {
       Status = UpdateSystemFirmware (ImageHdr);
@@ -980,6 +980,10 @@ ApplyFwImage (
     break;
   case FW_UPDATE_COMP_CMD_REQUEST:
     Status = FwCmdUpdateProcess (ImageHdr);
+    break;
+  case FW_UPDATE_COMP_EC_REGION:
+    Status = UpdateFullRegion (FlashRegionEC, ImageHdr);
+    *ResetRequired = FALSE;
     break;
   default:
     Status = UpdateSblComponent (ImageHdr);

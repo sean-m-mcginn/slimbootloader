@@ -127,17 +127,11 @@
 #define B_SPI_FRAP_BMWAG_MASK            0xFF000000 ///< Master Write Access Grant MASK
 #define B_SPI_FRAP_BMRAG_MASK            0x00FF0000 ///< Master Read Access Grant Grant MASK
 #define B_SPI_FRAP_BRWA_MASK             0x0000FF00 ///< BIOS Region Write Access MASK
-#define B_SPI_FRAP_BRWA_PLATFORM         BIT12 //< Region write access for Region4 PlatformData
-#define B_SPI_FRAP_BRWA_GBE              BIT11 //< Region write access for Region3 GbE
-#define B_SPI_FRAP_BRWA_SEC              BIT10 ///< Region Write Access for Region2 SEC
-#define B_SPI_FRAP_BRWA_BIOS             BIT9  ///< Region Write Access for Region1 BIOS
-#define B_SPI_FRAP_BRWA_FLASHD           BIT8  ///< Region Write Access for Region0 Flash Descriptor
+#define B_SPI_FRAP_BRWA_EC               BIT9       ///< Region write access for Region5 EC
+#define B_SPI_FRAP_BRWA_BIOS             BIT8       ///< Region write Access for Region1 BIOS
 #define B_SPI_FRAP_BRRA_MASK             0x000000FF ///< BIOS Region Read Access MASK
-#define B_SPI_FRAP_BRRA_PLATFORM         BIT4       ///< Region read access for Region4 PlatformData
-#define B_SPI_FRAP_BRRA_GBE              BIT3       ///< Region read access for Region3 GbE
-#define B_SPI_FRAP_BRRA_SEC              BIT2       ///< Region Read Access for Region2 SEC
-#define B_SPI_FRAP_BRRA_BIOS             BIT1       ///< Region Read Access for Region1 BIOS
-#define B_SPI_FRAP_BRRA_FLASHD           BIT0       ///< Region Read Access for Region0 Flash Descriptor
+#define B_SPI_FRAP_BRRA_EC               BIT1       ///< Region read access for Region5 EC
+#define B_SPI_FRAP_BRRA_BIOS             BIT0       ///< Region read Access for Region1 BIOS
 
 #define V_SPI_FLREG_DISABLED            0x00007FFF  ////< Region Base all 1's and Limits all 0's indicates the region is disabled.
 
@@ -185,7 +179,9 @@
 
 #define R_SPI_FREG8_EC                   0x74       ///< Flash Region 8 (Embedded Controller) (32bits)
 #define B_SPI_FREG8_LIMIT_MASK           0x7FFF0000 ///< Size, [30:16] here represents limit[26:12]
+#define N_SPI_FREG8_LIMIT                4          ///< Bit 30:16 identifies address bits [26:12]
 #define B_SPI_FREG8_BASE_MASK            0x00007FFF ///< Base, [14:0]  here represents base [26:12]
+#define N_SPI_FREG8_BASE                 12         ///< Bit 14:0 identifies address bits [26:2]
 
 #define R_SPI_FREG9_DEVICE_EXPANSION_2   0x78       ///< Flash Region 9 (Device Expansion 2) (32bits)
 #define B_SPI_FREG9_LIMIT_MASK           0x7FFF0000 ///< Size, [30:16] here represents limit[26:12]

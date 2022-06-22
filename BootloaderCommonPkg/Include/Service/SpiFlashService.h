@@ -23,6 +23,16 @@ typedef enum {
   FlashRegionGbE,
   FlashRegionPlatformData,
   FlashRegionDer,
+  FlashRegionSecondaryBios,
+  FlashRegionuCodePatch,
+  FlashRegionEC,
+  FlashRegionDeviceExpansion2,
+  FlashRegionIE,
+  FlashRegion10Gbe_A,
+  FlashRegion10Gbe_B,
+  FlashRegion13,
+  FlashRegion14,
+  FlashRegion15,
   FlashRegionAll,
   FlashRegionMax
 } FLASH_REGION_TYPE;

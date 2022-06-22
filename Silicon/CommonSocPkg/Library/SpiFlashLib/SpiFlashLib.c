@@ -653,17 +653,6 @@ SendSpiCmd (
       (FlashCycleType == FlashCycleWrite) ||
       (FlashCycleType == FlashCycleErase)) {
     switch (FlashRegionType) {
-    case FlashRegionDescriptor:
-      if (FlashCycleType == FlashCycleRead) {
-        PermissionBit = B_SPI_FRAP_BRRA_FLASHD;
-      } else {
-        PermissionBit = B_SPI_FRAP_BRWA_FLASHD;
-      }
-      HardwareSpiAddr += (MmioRead32 (ScSpiBar0 + R_SPI_FREG0_FLASHD) &
-                          B_SPI_FREG0_BASE_MASK) << N_SPI_FREG0_BASE;
-      LimitAddress = (MmioRead32 (ScSpiBar0 + R_SPI_FREG0_FLASHD) &
-                      B_SPI_FREG0_LIMIT_MASK) >> N_SPI_FREG0_LIMIT;
-      break;
     case FlashRegionBios:
       if (FlashCycleType == FlashCycleRead) {
         PermissionBit = B_SPI_FRAP_BRRA_BIOS;
@@ -675,38 +664,16 @@ SendSpiCmd (
       LimitAddress = (MmioRead32 (ScSpiBar0 + R_SPI_FREG1_BIOS) &
                       B_SPI_FREG1_LIMIT_MASK) >> N_SPI_FREG1_LIMIT;
       break;
-    case FlashRegionMe:
+    case FlashRegionEC:
       if (FlashCycleType == FlashCycleRead) {
-        PermissionBit = B_SPI_FRAP_BRRA_SEC;
+        PermissionBit = B_SPI_FRAP_BRRA_EC;
       } else {
-        PermissionBit = B_SPI_FRAP_BRWA_SEC;
+        PermissionBit = B_SPI_FRAP_BRWA_EC;
       }
-      HardwareSpiAddr += (MmioRead32 (ScSpiBar0 + R_SPI_FREG2_SEC) &
-                          B_SPI_FREG2_BASE_MASK) << N_SPI_FREG2_BASE;
-      LimitAddress = (MmioRead32 (ScSpiBar0 + R_SPI_FREG2_SEC) &
-                      B_SPI_FREG2_LIMIT_MASK) >> N_SPI_FREG2_LIMIT;
-      break;
-    case FlashRegionGbE:
-      if (FlashCycleType == FlashCycleRead) {
-        PermissionBit = B_SPI_FRAP_BRRA_GBE;
-      } else {
-        PermissionBit = B_SPI_FRAP_BRWA_GBE;
-      }
-      HardwareSpiAddr += (MmioRead32 (ScSpiBar0 + R_SPI_FREG3_GBE) &
-                          B_SPI_FREG3_BASE_MASK) << N_SPI_FREG3_BASE;
-      LimitAddress = (MmioRead32 (ScSpiBar0 + R_SPI_FREG3_GBE) &
-                      B_SPI_FREG3_LIMIT_MASK) >> N_SPI_FREG3_LIMIT;
-      break;
-    case FlashRegionPlatformData:
-      if (FlashCycleType == FlashCycleRead) {
-        PermissionBit = B_SPI_FRAP_BRRA_PLATFORM;
-      } else {
-        PermissionBit = B_SPI_FRAP_BRWA_PLATFORM;
-      }
-      HardwareSpiAddr += (MmioRead32 (ScSpiBar0 + R_SPI_FREG4_PLATFORM_DATA) &
-                          B_SPI_FREG4_BASE_MASK) << N_SPI_FREG4_BASE;
-      LimitAddress = (MmioRead32 (ScSpiBar0 + R_SPI_FREG4_PLATFORM_DATA) &
-                      B_SPI_FREG4_LIMIT_MASK) >> N_SPI_FREG4_LIMIT;
+      HardwareSpiAddr += (MmioRead32 (ScSpiBar0 + R_SPI_FREG8_EC) &
+                          B_SPI_FREG8_BASE_MASK) << N_SPI_FREG8_BASE;
+      LimitAddress = (MmioRead32 (ScSpiBar0 + R_SPI_FREG8_EC) &
+                      B_SPI_FREG8_BASE_MASK) >> N_SPI_FREG8_LIMIT;
       break;
     case FlashRegionAll:
       ///
