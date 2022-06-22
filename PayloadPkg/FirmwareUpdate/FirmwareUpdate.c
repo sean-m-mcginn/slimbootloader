@@ -1422,7 +1422,6 @@ PayloadMain (
   if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency) && GetFailedBootCount () >= 3) {
     DEBUG((DEBUG_ERROR, "Triggered FW recovery!\n"));
     Status = InitFirmwareRecovery ();
-    // Need to clear out update flags after BP01 recovery
     if (EFI_ERROR (Status)) {
       DEBUG((DEBUG_ERROR, "Firmware recovery failed with Status = %r\n", Status));
     }

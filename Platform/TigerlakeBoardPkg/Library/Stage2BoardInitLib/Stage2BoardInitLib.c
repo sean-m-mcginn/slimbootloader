@@ -1031,6 +1031,11 @@ BoardInit (
 
     if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
       HaltWatchDogTimer ();
+
+      // Clear failed boot counter if recovery/update not indicated
+      if (GetBootMode() != BOOT_ON_FLASH_UPDATE) {
+        ClearFailedBootCount ();
+      }
     }
 
     break;
