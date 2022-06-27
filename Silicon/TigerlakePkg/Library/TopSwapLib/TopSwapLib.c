@@ -15,14 +15,19 @@
 #include <PchAccess.h>
 
 /**
-  TODO: this
+  Set the top swap bit in the appropriate register.
+
+  @param[in] Val    The value to set the TS bit.
+
+  @retval EFI_SUCCESS             if TS bit set sucessfully.
+  @retval Others                  if an error occured when setting TS bit.
 **/
 EFI_STATUS
 EFIAPI
-SetTopSwap (
+SetTopSwapBit (
   IN BOOLEAN Val
   )
-  {
+{
   UINTN     P2sbBase;
   UINT32    P2sbBar;
   UINT32    TopSwapReg;
@@ -82,18 +87,22 @@ SetTopSwap (
   DEBUG ((DEBUG_INFO, "Read it to ensure data is written. Data32=0x%x\n", Data32));
 
   return EFI_SUCCESS;
-  }
-
+}
 
 /**
-  TODO: this
+  Get the top swap bit from the appropriate register.
+
+  @param[out] Val    The current value of the TS bit.
+
+  @retval EFI_SUCCESS             if TS bit retrieved successfully.
+  @retval Others                  if an error occured when getting TS bit.
 **/  
 EFI_STATUS
 EFIAPI
-GetTopSwap (
+GetTopSwapBit (
   OUT BOOLEAN *Val
   )
-  {
+{
 
   UINTN     P2sbBase;
   UINT32    P2sbBar;
@@ -140,5 +149,5 @@ GetTopSwap (
   *Val = Data32 & BIT0;
 
   return EFI_SUCCESS;
-  }
+}
 

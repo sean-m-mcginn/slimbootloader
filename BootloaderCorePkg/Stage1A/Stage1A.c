@@ -363,7 +363,7 @@ SecStartup2 (
   // Extra initialization
   if (FlashMap != NULL) {
     if (PcdGetBool (PcdSblResiliencyEnabled)) {
-      Status = GetTopSwap (IsBackup);
+      Status = GetTopSwapBit (IsBackup);
       if (EFI_ERROR (Status)) {
         CpuHalt ("Top swap bit retrieval failed!\n");
       }

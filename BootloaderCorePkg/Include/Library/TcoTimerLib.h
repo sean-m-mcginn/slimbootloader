@@ -9,7 +9,7 @@
 #define TCO_TIMER_LIB_H_
 
 /**
-  Disable watch dog timer (Initialize TCO timer and halt it).
+  Program/enable TCO base address and halt TCO timer.
 **/
 VOID
 EFIAPI
@@ -18,7 +18,7 @@ DisableTcoTimer (
   );
 
 /**
-  Set up watch dog timer (Initialize TCO timer and clear reboot flag).
+  Program/enable TCO base address, set the TCO timeout, and restart the TCO timer.
 
   @param[in] Timeout    Number of 0.6s ticks to wait
 **/
@@ -29,7 +29,10 @@ SetupTcoTimer (
   );
 
 /**
-  Check if TCO status indicates failure on last boot
+  Check if TCO status indicates failure on last boot.
+
+  @return TRUE if last boot failed.
+  @return FALSE if last boot succeeded.
 **/
 BOOLEAN
 EFIAPI
@@ -38,7 +41,7 @@ WasPreviousTcoTimeout (
   );
 
 /**
-  Clear TCO status
+  Clear TCO status.
 **/
 VOID
 EFIAPI
@@ -47,7 +50,7 @@ ClearTcoStatus (
   );
 
 /**
-  Halt the watch dog timer (Halt the TCO timer).
+  Halt the TCO timer.
 **/
 VOID
 EFIAPI

@@ -324,7 +324,7 @@ HandleBootFailures (
     DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", GetFailedBootCount ()));
     if (GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
       DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching partitions...\n"));
-      SetTopSwap (IsSwitchToBackup);
+      SetTopSwapBit (IsSwitchToBackup);
       ResetSystem (EfiResetCold);
     }
   }

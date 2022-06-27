@@ -14,7 +14,7 @@
 #include <CpuRegsAccess.h>
 
 /**
-  Program and enable TCO base address. 
+  Program/enable TCO base address.
 **/
 VOID
 EFIAPI
@@ -26,9 +26,8 @@ SetupTcoBaseAddress (
   PciWrite32 (PCI_LIB_ADDRESS(0, 31, 4, 0x54), BIT8);
 }
 
-
 /**
-  Disable watch dog timer (Initialize TCO timer and halt it).
+  Program/enable TCO base address and halt TCO timer.
 **/
 VOID
 EFIAPI
@@ -44,7 +43,7 @@ DisableTcoTimer (
 }
 
 /**
-  Set up watch dog timer (Initialize TCO timer and clear reboot flag).
+  Program/enable TCO base address, set the TCO timeout, and restart the TCO timer.
 
   @param[in] Timeout    Number of 0.6s ticks to wait
 **/
@@ -65,7 +64,10 @@ SetupTcoTimer (
 }
 
 /**
-  Check if TCO status indicates failure on last boot
+  Check if TCO status indicates failure on last boot.
+
+  @return TRUE if last boot failed.
+  @return FALSE if last boot succeeded.
 **/
 BOOLEAN
 EFIAPI
@@ -77,7 +79,7 @@ WasPreviousTcoTimeout (
 }
 
 /**
-  Clear TCO status
+  Clear TCO status.
 **/
 VOID
 EFIAPI
@@ -89,9 +91,10 @@ ClearTcoStatus (
 }
 
 /**
-  Halt the watch dog timer (Halt the TCO timer).
+  Halt the TCO timer.
 **/
 VOID
+EFIAPI
 HaltTcoTimer (
   VOID
   )

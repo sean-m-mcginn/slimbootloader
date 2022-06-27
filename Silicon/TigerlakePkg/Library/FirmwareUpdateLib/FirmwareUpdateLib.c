@@ -82,7 +82,7 @@ SetBootPartition (
   IN BOOT_PARTITION  Partition
   )
 {
-  return SetTopSwap (Partition == PrimaryPartition);
+  return SetTopSwapBit (Partition == PrimaryPartition);
 }
 
 /**
