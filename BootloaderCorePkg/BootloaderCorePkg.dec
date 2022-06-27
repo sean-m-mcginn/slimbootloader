@@ -158,10 +158,14 @@
   # NOTE: some features might be disabled when ENABLE_FAST_BOOT is set.
   gPlatformModuleTokenSpaceGuid.PcdFastBootEnabled        |  FALSE     | BOOLEAN| 0x200000F2
 
-  # Resiliency-Related Flags
-  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled       |  FALSE     | BOOLEAN | 0x200000F3
-  gPlatformModuleTokenSpaceGuid.PcdBootFailureThreshold       |  3         | UINT8   | 0x200000F4
-  gPlatformModuleTokenSpaceGuid.PcdTcoTimeout                 |  20        | UINT16  | 0x200000F5
+  # If we want to recover from boot failure
+  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled   |  FALSE     | BOOLEAN | 0x200000F3
+
+ # Number of boots to try before switching to other partition
+  gPlatformModuleTokenSpaceGuid.PcdBootFailureThreshold   |  3         | UINT8   | 0x200000F4
+
+  # The number of 0.6s ticks to wait before assuming boot failure and forcing a reboot
+  gPlatformModuleTokenSpaceGuid.PcdTcoTimeout             |  20        | UINT16  | 0x200000F5
 
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
