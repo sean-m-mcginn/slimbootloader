@@ -49,7 +49,6 @@
   BoardSupportLib
   WatchDogTimerLib
   TccLib
-  SocInitLib
 
 [Guids]
 

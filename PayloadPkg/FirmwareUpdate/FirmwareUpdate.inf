@@ -54,7 +54,6 @@
   BootOptionLib
   TimerLib
   BootGuardLib
-  SocInitLib
   WatchDogTimerLib
 
 [Guids]

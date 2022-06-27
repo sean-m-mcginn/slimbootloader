@@ -18,7 +18,19 @@ VOID
 EFIAPI
 EnableCodeExecution (
   VOID
-  )
+)
 {
 
+}
+
+/**
+  Disable watch dog timer (Halt TCO timer).
+**/
+VOID
+EFIAPI
+DisableWatchDogTimer (
+  VOID
+)
+{
+  
 }

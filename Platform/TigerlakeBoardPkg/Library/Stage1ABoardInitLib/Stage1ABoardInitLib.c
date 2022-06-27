@@ -96,57 +96,6 @@ EarlyPlatformDataCheck (
 }
 
 /**
-  Get the boot partition number from TS register.
-
-  @retval    UINT8     Boot partion number (primary or secondary).
-
-**/
-UINT8
-GetBootPartitionFromRegister (
-  VOID
-  )
-{
-  UINTN     P2sbBase;
-  UINT32    P2sbBar;
-  UINT32    TopSwapReg;
-  UINT32    Data32;
-  BOOLEAN   P2sbIsHidden;
-
-  //
-  // Get Top swap register Bit0 in PCH Private Configuration Space.
-  //
-  P2sbBase   = MM_PCI_ADDRESS (0, PCI_DEVICE_NUMBER_PCH_LPC, 1, 0); // P2SB device base
-  P2sbIsHidden = FALSE;
-
-  if (MmioRead16 (P2sbBase) == 0xFFFF) {
-    //
-    // unhide P2SB
-    //
-    MmioWrite8 (P2sbBase + 0xE1, 0);
-    P2sbIsHidden = TRUE;
-    DEBUG ((DEBUG_INFO, "P2sb is hidden, unhide it\n"));
-  }
-
-  P2sbBar    = MmioRead32 (P2sbBase + 0x10);
-  P2sbBar  &= 0xFFFFFFF0;
-  ASSERT (P2sbBar != 0xFFFFFFF0);
-
-  TopSwapReg = P2sbBar | ((PID_RTC_HOST) << 16) | (UINT16)(R_RTC_PCR_BUC);
-  Data32    = MmioRead32 (TopSwapReg);
-  DEBUG ((DEBUG_INFO, "P2sbBar=0x%x, Data32=0x%x\n", P2sbBar, Data32));
-
-  if (P2sbIsHidden) {
-    //
-    // Hide P2SB
-    //
-    MmioWrite8 (P2sbBase + 0xE1, BIT0);
-    DEBUG ((DEBUG_INFO, "Hide p2sb again.\n"));
-  }
-
-  return Data32 & BIT0;
-}
-
-/**
   Board specific hook points.
 
   Implement board specific initialization during the boot flow.

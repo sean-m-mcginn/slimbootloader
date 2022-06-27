@@ -30,7 +30,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/ConsoleOutLib.h>
 #include <Guid/OsBootOptionGuid.h>
 #include <Library/BootGuardLib.h>
-#include <Library/SocInitLib.h>
 #include <Library/WatchDogTimerLib.h>
 #include "FirmwareUpdateHelper.h"
 

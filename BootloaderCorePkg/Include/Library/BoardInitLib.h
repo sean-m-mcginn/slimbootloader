@@ -20,32 +20,6 @@
 #include <Service/PlatformService.h>
 
 /**
-  Update recovery-related data and react appropriately.
-**/
-VOID
-EFIAPI
-HandleRecovery (
-  VOID
-  );
-
-/**
-  Disable watch dog timer (Halt TCO timer).
-**/
-VOID
-EFIAPI
-DisableWatchDogTimer (
-  VOID
-  );
-
-/**
-  TODO
-**/
-EFI_STATUS
-SwitchBootPartition (
-  VOID
-  );
-
-/**
   Board specific hook points.
 
   Implement board specific initialization during the boot flow.
@@ -68,6 +42,15 @@ VOID
 EFIAPI
 UpdateFspConfig (
   VOID     *FspUpdPtr
+  );
+
+/**
+  Disable watch dog timer (Halt TCO timer).
+**/
+VOID
+EFIAPI
+DisableWatchDogTimer (
+  VOID
   );
 
 /**

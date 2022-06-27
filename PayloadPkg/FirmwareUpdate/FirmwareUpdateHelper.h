@@ -13,30 +13,6 @@
 #include <Library/ResetSystemLib.h>
 
 /**
-  Copy a block of data from one address to another.
-
-  This function reads a block of data from one address and writes it to
-  another. It also verifies that the block of data is written to the
-  destination address.
-
-  @param[in] DestAdress       The boot media address to be written to.
-  @param[in] SrcAddress       The boot media address to be read from.
-  @param[in] Length           The length of data to write to boot media.
-  @param[in] Reverse          Indicates if copy is from primary to backup.
-
-  @retval  EFI_SUCCESS        Update successfully.
-  @retval  others             Error happening when updating.
-**/
-EFI_STATUS
-EFIAPI
-CopyRegionBlock (
-  IN  UINT64    PrimaryAddress,
-  IN  UINT64    BackupAddress,
-  IN  UINT32    Length,
-  IN  BOOLEAN   Reverse
-  );
-
-/**
   Update a region block.
 
   This is the acture function to update boot meia. It will erase boot device,

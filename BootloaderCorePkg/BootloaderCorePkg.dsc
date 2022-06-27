@@ -429,7 +429,6 @@
       BootloaderLib           | PayloadPkg/Library/PayloadLib/PayloadLib.inf
       PlatformHookLib         | PayloadPkg/Library/PlatformHookLib/PlatformHookLib.inf
       FirmwareUpdateLib       | $(SOC_FWU_LIB_INF_FILE)
-      SocInitLib              | $(SOC_INIT_STAGE1A_LIB_INF_FILE)
   }
 !endif
 
