@@ -71,7 +71,6 @@
   SmbiosInitLib
   WatchDogTimerLib
   PciePm
-  AcpiTimerLib
 
 [Guids]
   gOsConfigDataGuid

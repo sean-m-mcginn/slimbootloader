@@ -1,5 +1,5 @@
 /** @file
-  Library for Top Swap.
+  Library for top swap.
 
   Copyright (c) 2022, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -150,4 +150,3 @@ GetTopSwapBit (
 
   return EFI_SUCCESS;
 }
-

@@ -36,10 +36,7 @@ DisableTcoTimer (
   )
 {
   SetupTcoBaseAddress ();
-
-  // Halt the TCO timer.
-  IoOr16 (TCO_BASE_ADDRESS + 0x8, BIT11);
-
+  HaltTcoTimer ();
 }
 
 /**
@@ -99,6 +96,5 @@ HaltTcoTimer (
   VOID
   )
 {
-  DEBUG ((DEBUG_INFO, "Halting TCO timer!\n"));
   IoOr16 (TCO_BASE_ADDRESS + 0x8, BIT11);
 }

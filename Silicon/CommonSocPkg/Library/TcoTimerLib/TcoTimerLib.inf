@@ -1,7 +1,7 @@
 ## @file
-#  Component description file for the WatchDogTimerLib
+#  Component description file for the TCO timer library
 #
-#  Copyright 2021 Intel Corporation.
+#  Copyright 2022 Intel Corporation.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -15,14 +15,10 @@
   LIBRARY_CLASS                  = TcoTimerLib
 
 [Sources]
-TcoTimerLib.c
+  TcoTimerLib.c
 
 [Packages]
-MdePkg/MdePkg.dec
-BootloaderCommonPkg/BootloaderCommonPkg.dec
-BootloaderCorePkg/BootloaderCorePkg.dec
-
-[LibraryClasses]
-
-[Pcd]
-
+  MdePkg/MdePkg.dec
+  BootloaderCommonPkg/BootloaderCommonPkg.dec
+  BootloaderCorePkg/BootloaderCorePkg.dec
+  

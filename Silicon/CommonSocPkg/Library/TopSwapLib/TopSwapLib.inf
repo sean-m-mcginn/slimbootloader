@@ -1,7 +1,7 @@
 ## @file
-#  Component description file for the TopSwap
+#  Component description file for the top swap library
 #
-#  Copyright 2021 Intel Corporation.
+#  Copyright 2022 Intel Corporation.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -15,13 +15,9 @@
   LIBRARY_CLASS                  = TopSwapLib
 
 [Sources]
-TopSwapLib.c
+  TopSwapLib.c
 
 [Packages]
   MdePkg/MdePkg.dec
   BootloaderCorePkg/BootloaderCorePkg.dec
-
-[LibraryClasses]
-
-[Pcd]
 

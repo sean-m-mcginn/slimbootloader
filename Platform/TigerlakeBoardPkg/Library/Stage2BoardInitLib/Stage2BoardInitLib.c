@@ -86,7 +86,6 @@
 #include <Library/PciePm.h>
 #include <Library/PlatformInfo.h>
 #include <Library/PlatformHookLib.h>
-#include <Library/TimerLib.h>
 
 
 
@@ -906,9 +905,6 @@ BoardInit (
     Status = PcdSet32S (PcdAcpiTableTemplatePtr, (UINT32)(UINTN)mPlatformAcpiTables);
     break;
   case PostSiliconInit:
-    // if (GetCurrentBootPartition () == 0) {
-    //   MicroSecondDelay (20000000);
-    // }
     if (IsWdtFlagsSet(WDT_FLAG_TCC_DSO_IN_PROGRESS)) {
       WdtDisable (WDT_FLAG_TCC_DSO_IN_PROGRESS);
     }
