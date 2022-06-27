@@ -168,11 +168,6 @@ BoardInit (
 
   switch (InitPhase) {
   case PostTempRamInit:
-    if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
-      SetupWatchDogTimer ();
-    } else {
-      DisableWatchDogTimer ();
-    }
 
     EarlyPlatformDataCheck ();
     DebugPort = GetDebugPort ();

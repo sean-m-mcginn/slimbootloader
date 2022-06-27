@@ -167,27 +167,3 @@ UpdateMemoryInfo (
   }
   SetMemoryInfo (EnumMemInfoTouum,  Touum);
 }
-
-/**
-  Check if TCO status indicates failure on last boot
-**/
-BOOLEAN
-EFIAPI
-WasPreviousBootFailure (
-  VOID
-  )
-{
-  return IoRead16 (TCO_BASE_ADDRESS + 0x6) & BIT1;
-}
-
-/**
-  Clear TCO status
-**/
-VOID
-EFIAPI
-ClearBootStatus (
-  VOID
-  )
-{
-  IoOr16 (TCO_BASE_ADDRESS + 0x6, BIT1);
-}

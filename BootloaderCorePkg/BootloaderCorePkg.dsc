@@ -261,7 +261,6 @@
 
   gPlatformCommonLibTokenSpaceGuid.PcdBootPerformanceMask       | $(BOOT_PERFORMANCE_MASK)
   gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled         | $(ENABLE_SBL_RESILIENCY)
-  gPlatformModuleTokenSpaceGuid.PcdTopSwapBuiltForResiliency    | $(BUILD_RESILIENT_TS)
 
 [PcdsPatchableInModule]
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel   | 0x8000004F

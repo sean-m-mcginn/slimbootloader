@@ -16,48 +16,12 @@ EnableCodeExecution (
   VOID
   );
 
-
 /**
-  Disable watch dog timer (Initialize TCO timer and halt it).
+  Disable watch dog timer (Halt TCO timer).
 **/
 VOID
 EFIAPI
 DisableWatchDogTimer (
-  VOID
-  );
-
-/**
-  Set up watch dog timer (Initialize TCO timer and clear reboot flag).
-**/
-VOID
-EFIAPI
-SetupWatchDogTimer (
-  VOID
-  );
-
-/**
-  Halt the watch dog timer (Halt the TCO timer).
-**/
-VOID
-HaltWatchDogTimer (
-  VOID
-  );
-
-/**
-  Check if TCO status indicates failure on last boot
-**/
-BOOLEAN
-EFIAPI
-WasPreviousBootFailure (
-  VOID
-  );
-
-/**
-  Clear TCO status
-**/
-VOID
-EFIAPI
-ClearBootStatus (
   VOID
   );
 

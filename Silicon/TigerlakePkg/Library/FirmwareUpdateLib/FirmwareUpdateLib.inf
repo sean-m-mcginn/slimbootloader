@@ -39,6 +39,7 @@
   PartitionLib
   LitePeCoffLib
   HeciInitLib
+  TopSwapLib
 
 [Guids]
   gEfiPartTypeSystemPartGuid

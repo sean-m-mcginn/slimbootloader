@@ -95,15 +95,3 @@ EnableLegacyRegions (
   PciWrite32 (PCI_LIB_ADDRESS(0, 0, 0, 0x84), 0x00003333);
   PciWrite32 (PCI_LIB_ADDRESS(0, 0, 0, 0x80), 0x33333330);
 }
-
-/**
-  Halt the watch dog timer (Halt the TCO timer).
-**/
-VOID
-HaltWatchDogTimer (
-  VOID
-  )
-{
-  DEBUG((DEBUG_INFO, "Halting TCO timer!\n"));
-  IoOr16 (TCO_BASE_ADDRESS + 0x8, BIT11);
-}

@@ -1168,7 +1168,6 @@ InitFirmwareUpdate (
 
 /**
   Try to recover a working boot partition.
-
   @retval  EFI_SUCCESS          The operation completed successfully.
   @retval  others               There is error happening.
 **/
@@ -1186,6 +1185,10 @@ InitFirmwareRecovery (
   UINT32                      RedundantPrimaryAddress;
   UINT32                      RedundantBackupAddress;
   BOOLEAN                     IsBackupUpdate;
+  FIRMWARE_UPDATE_PARTITION   *UpdatePartition;
+  FIRMWARE_UPDATE_REGION      *UpdateRegion;
+  UINT32                      AllocateSize;
+  UINT32                      RomBase;
 
   FlashMap = GetFlashMapPtr ();
   if (FlashMap == NULL) {
@@ -1193,30 +1196,50 @@ InitFirmwareRecovery (
     return EFI_NOT_FOUND;
   }
 
+  RomBase = (UINT32) (0x100000000ULL - FlashMap->RomSize);
+
   Status = GetRegionInfo (&TopSwapRegionSize, &RedundantRegionSize, NULL);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "GetRegionInfo, Status = 0x%x\n", Status));
     return Status;
   }
 
+  IsBackupUpdate = GetCurrentBootPartition () == PrimaryPartition;
+
   TopSwapPrimaryAddress = FlashMap->RomSize - TopSwapRegionSize;
   TopSwapBackupAddress = TopSwapPrimaryAddress - TopSwapRegionSize;
   RedundantPrimaryAddress = TopSwapBackupAddress - RedundantRegionSize;
   RedundantBackupAddress = RedundantPrimaryAddress - RedundantRegionSize;
 
-  IsBackupUpdate = GetCurrentBootPartition() == 0;
+  AllocateSize = sizeof (FIRMWARE_UPDATE_PARTITION) + sizeof (FIRMWARE_UPDATE_REGION);
+  UpdatePartition = (FIRMWARE_UPDATE_PARTITION *) AllocateZeroPool (AllocateSize);
+  UpdatePartition->RegionCount = 2;
 
-  DEBUG ((DEBUG_ERROR, "Copying top swap....\n"));
-  Status = CopyRegionBlock (TopSwapPrimaryAddress, TopSwapBackupAddress, TopSwapRegionSize, IsBackupUpdate);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "CopyRegionBlock, Status = 0x%x\n", Status));
-    return Status;
+  if (IsBackupUpdate) {
+    UpdateRegion = &UpdatePartition->FwRegion[0];
+    UpdateRegion->SourceAddress = (VOID *)((UINTN)RomBase + (UINTN)TopSwapPrimaryAddress);
+    UpdateRegion->ToUpdateAddress = TopSwapBackupAddress;
+    UpdateRegion->UpdateSize = TopSwapRegionSize;
+
+    UpdateRegion = &UpdatePartition->FwRegion[1];
+    UpdateRegion->SourceAddress = (VOID *)((UINTN)RomBase + (UINTN)RedundantPrimaryAddress);
+    UpdateRegion->ToUpdateAddress = RedundantBackupAddress;
+    UpdateRegion->UpdateSize = RedundantRegionSize;
+  } else {
+    UpdateRegion = &UpdatePartition->FwRegion[0];
+    UpdateRegion->SourceAddress = (VOID *)((UINTN)RomBase + (UINTN)TopSwapBackupAddress);
+    UpdateRegion->ToUpdateAddress = TopSwapPrimaryAddress;
+    UpdateRegion->UpdateSize = TopSwapRegionSize;
+
+    UpdateRegion = &UpdatePartition->FwRegion[1];
+    UpdateRegion->SourceAddress = (VOID *)((UINTN)RomBase + (UINTN)RedundantBackupAddress);
+    UpdateRegion->ToUpdateAddress = RedundantPrimaryAddress;
+    UpdateRegion->UpdateSize = RedundantRegionSize;
   }
 
-  DEBUG ((DEBUG_ERROR, "Copying redundant....\n"));
-  Status = CopyRegionBlock (RedundantPrimaryAddress, RedundantBackupAddress, RedundantRegionSize, IsBackupUpdate);
+  Status = UpdateBootPartition (UpdatePartition);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "CopyRegionBlock, Status = 0x%x\n", Status));
+    DEBUG ((DEBUG_ERROR, "UpdateBootPartition, Status = 0x%x\n", Status));
     return Status;
   }
 
@@ -1419,7 +1442,7 @@ PayloadMain (
   //
   // Perform firmware recovery/update
   //
-  if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency) && GetFailedBootCount () >= 3) {
+  if (PcdGetBool (PcdSblResiliencyEnabled) && GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
     DEBUG((DEBUG_ERROR, "Triggered FW recovery!\n"));
     Status = InitFirmwareRecovery ();
     if (EFI_ERROR (Status)) {

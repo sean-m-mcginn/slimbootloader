@@ -159,8 +159,9 @@
   gPlatformModuleTokenSpaceGuid.PcdFastBootEnabled        |  FALSE     | BOOLEAN| 0x200000F2
 
   # Resiliency-Related Flags
-  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled       |  FALSE     | BOOLEAN| 0x200000F3
-  gPlatformModuleTokenSpaceGuid.PcdTopSwapBuiltForResiliency  |  FALSE     | BOOLEAN| 0x200000F4
+  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled       |  FALSE     | BOOLEAN | 0x200000F3
+  gPlatformModuleTokenSpaceGuid.PcdBootFailureThreshold       |  3         | UINT8   | 0x200000F4
+  gPlatformModuleTokenSpaceGuid.PcdTcoTimeout                 |  20        | UINT16  | 0x200000F5
 
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]

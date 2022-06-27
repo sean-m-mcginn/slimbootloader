@@ -165,11 +165,15 @@ class Board(BaseBoard):
         self.FWUPDATE_SIZE        = 0x00020000 if self.ENABLE_FWU else 0
         self.OS_LOADER_FD_NUMBLK  = self.OS_LOADER_FD_SIZE // self.FLASH_BLOCK_SIZE
 
-        self.BUILD_RESILIENT_TS      = 1
-        self.ENABLE_SBL_RESILIENCY   = 1
         self.UCODE_SLOT_SIZE         = 0x0001C000
 
-        if self.BUILD_RESILIENT_TS:
+        self.BUILD_IDENTICAL_TS      = 1
+        self.ENABLE_SBL_RESILIENCY   = 1
+
+        if self.ENABLE_SBL_RESILIENCY:
+            self.BUILD_IDENTICAL_TS   = 1
+
+        if self.BUILD_IDENTICAL_TS:
             self.TOP_SWAP_SIZE        = 0x200000
             self.REDUNDANT_SIZE       = 0x1E0000
         else:
@@ -190,7 +194,7 @@ class Board(BaseBoard):
             self.TMAC_SIZE = 0x00001000
             self.SIIPFW_SIZE += self.TMAC_SIZE
 
-        if self.BUILD_RESILIENT_TS:
+        if self.BUILD_IDENTICAL_TS:
             Redundant_Components_Size = self.STAGE2_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE
         else:
             Redundant_Components_Size = self.UCODE_SIZE + self.STAGE2_SIZE + self.STAGE1B_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE + self.KEYHASH_SIZE
@@ -222,7 +226,7 @@ class Board(BaseBoard):
         self.ACM_SIZE             = 0x00040000 + self.KM_SIZE + self.BPM_SIZE
         # adjust ACM_SIZE to meet 256KB alignment (to align 256KB ACM size)
         if self.ACM_SIZE > 0:
-            if self.BUILD_RESILIENT_TS:
+            if self.BUILD_IDENTICAL_TS:
                 acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE - self.KEYHASH_SIZE
             else:
                 acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE
@@ -302,7 +306,9 @@ class Board(BaseBoard):
             'GpioLib|Silicon/CommonSocPkg/Library/GpioLib/GpioLib.inf',
             'GpioSiLib|Silicon/$(PCH_PKG_NAME)/Library/GpioSiLib/GpioSiLib.inf',
             'WatchDogTimerLib|Silicon/CommonSocPkg/Library/WatchDogTimerLib/WatchDogTimerLib.inf',
-            'AcpiTimerLib|BootloaderCommonPkg/Library/AcpiTimerLib/AcpiTimerLib.inf'
+            'AcpiTimerLib|BootloaderCommonPkg/Library/AcpiTimerLib/AcpiTimerLib.inf',
+            'TcoTimerLib|Silicon/$(SILICON_PKG_NAME)/Library/TcoTimerLib/TcoTimerLib.inf',
+            'TopSwapLib|Silicon/$(SILICON_PKG_NAME)/Library/TopSwapLib/TopSwapLib.inf'
         ]
 
         if self.BUILD_CSME_UPDATE_DRIVER:
@@ -426,7 +432,7 @@ class Board(BaseBoard):
                 ),
         ])
 
-        if self.BUILD_RESILIENT_TS:
+        if self.BUILD_IDENTICAL_TS:
             img_list.extend ([
                 ('REDUNDANT_A.bin', [
                     ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
@@ -465,7 +471,7 @@ class Board(BaseBoard):
                 ),
             ])
 
-        if self.BUILD_RESILIENT_TS:
+        if self.BUILD_IDENTICAL_TS:
             img_list.extend ([
                 ('TOP_SWAP_A.bin', [
                     ('STAGE1B_A.fd' ,  ''        , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),

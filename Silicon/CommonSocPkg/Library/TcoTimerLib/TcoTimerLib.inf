@@ -1,0 +1,28 @@
+## @file
+#  Component description file for the WatchDogTimerLib
+#
+#  Copyright 2021 Intel Corporation.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = TcoTimerLib
+  FILE_GUID                      = 78ec60d1-f6ef-4cb2-bafa-e273c22bb997
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = TcoTimerLib
+
+[Sources]
+TcoTimerLib.c
+
+[Packages]
+MdePkg/MdePkg.dec
+BootloaderCommonPkg/BootloaderCommonPkg.dec
+BootloaderCorePkg/BootloaderCorePkg.dec
+
+[LibraryClasses]
+
+[Pcd]
+

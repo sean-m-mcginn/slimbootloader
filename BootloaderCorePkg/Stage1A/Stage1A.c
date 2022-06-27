@@ -265,6 +265,7 @@ SecStartup2 (
   SERVICES_LIST            *ServiceList;
   BUF_INFO                 *BufInfo;
   CONTAINER_LIST           *ContainerList;
+  BOOLEAN                  *IsBackup;
 
   Stage1aFvBase = PcdGet32 (PcdStage1AFdBase) + PcdGet32 (PcdFSPTSize);
   PeCoffFindAndReportImageInfo ((UINT32) (UINTN) GET_STAGE_MODULE_BASE (Stage1aFvBase));
@@ -361,8 +362,12 @@ SecStartup2 (
 
   // Extra initialization
   if (FlashMap != NULL) {
-    if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
-      SetCurrentBootPartition (GetBootPartitionFromRegister ());
+    if (PcdGetBool (PcdSblResiliencyEnabled)) {
+      Status = GetTopSwap (IsBackup);
+      if (EFI_ERROR (Status)) {
+        CpuHalt ("Top swap bit retrieval failed!\n");
+      }
+      SetCurrentBootPartition (*IsBackup);
     }
     else {
       SetCurrentBootPartition ((FlashMap->Attributes & FLASH_MAP_ATTRIBUTES_BACKUP_REGION) ? 1 : 0);
@@ -372,6 +377,12 @@ SecStartup2 (
   // Call board hook to enable debug
   BoardInit (PostTempRamInit);
   AddMeasurePoint (0x1040);
+
+  if (PcdGetBool (PcdSblResiliencyEnabled) /* && !DebugCodeEnabled() */) {
+      SetupTcoTimer (PcdGet16 (PcdTcoTimeout));
+    } else {
+      DisableTcoTimer ();
+    }
 
   // Set DebugPrintErrorLevel to default PCD.
   SetDebugPrintErrorLevel (PcdGet32 (PcdDebugPrintErrorLevel));

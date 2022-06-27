@@ -54,6 +54,8 @@
   DebugAgentLib
   ExtraBaseLib
   StageLib
+  TcoTimerLib
+  TopSwapLib
 
 [Guids]
   gPlatformModuleTokenSpaceGuid
@@ -87,7 +89,7 @@
   gPlatformCommonLibTokenSpaceGuid.PcdPcdLibId
   gPlatformCommonLibTokenSpaceGuid.PcdCompSignHashAlg
   gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled
-  gPlatformModuleTokenSpaceGuid.PcdTopSwapBuiltForResiliency
+  gPlatformModuleTokenSpaceGuid.PcdTcoTimeout
 
 [Depex]
   TRUE

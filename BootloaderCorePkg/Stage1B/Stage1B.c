@@ -306,6 +306,56 @@ CreateConfigDatabase (
 }
 
 /**
+  Count boot failures and react appropriately.
+
+  @param[in] IsSwitchToBackup     Whether to switch to backup partition
+                                  (as opposed to primary partition) when
+                                  failure count reaches threshold.
+**/
+VOID
+EFIAPI
+HandleBootFailures (
+  BOOLEAN IsSwitchToBackup
+)
+{
+  if (WasPreviousTcoTimeout ()) {
+    ClearTcoStatus ();
+    IncrementFailedBootCount ();
+    DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", GetFailedBootCount ()));
+    if (GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
+      DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching partitions...\n"));
+      SetTopSwap (IsSwitchToBackup);
+      ResetSystem (EfiResetCold);
+    }
+  }
+}
+
+/**
+  Update recovery-related data and react appropriately.
+**/
+VOID
+EFIAPI
+HandleRecovery (
+  VOID
+  )
+{
+  if (GetBootMode () == BOOT_ON_FLASH_UPDATE) {
+    if (GetCurrentBootPartition () == BackupPartition) {
+      HandleBootFailures (FALSE);
+    }
+  } else {
+      if (GetCurrentBootPartition () == BackupPartition) {
+        if (GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
+          DEBUG ((DEBUG_INFO, "Switching to firmware update mode to fix corrupted partition...\n"));
+          SetBootMode (BOOT_ON_FLASH_UPDATE);
+        }
+      } else {
+        HandleBootFailures (TRUE);
+      }
+  }
+}
+
+/**
   Entry point to the C language phase of Stage 1B.
 
   Stage1B will find memory initialization. It can be either executed from
@@ -397,6 +447,10 @@ SecStartup2 (
   }
 
   BoardInit (PostConfigInit);
+
+  if (PcdGetBool (PcdSblResiliencyEnabled)) {
+    HandleRecovery ();
+  }
 
   //Get Platform ID and Boot Mode
   DEBUG ((DEBUG_INIT, "BOOT: BP%d \nMODE: %d\nBoardID: 0x%02X\n",

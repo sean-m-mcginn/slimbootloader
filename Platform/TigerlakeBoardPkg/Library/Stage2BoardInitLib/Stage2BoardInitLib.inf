@@ -114,5 +114,3 @@
   gPlatformModuleTokenSpaceGuid.PcdEnableDts
   gPlatformModuleTokenSpaceGuid.PcdEnablePciePm
   gPlatformModuleTokenSpaceGuid.PcdPciResourceMem64Base
-  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled
-  gPlatformModuleTokenSpaceGuid.PcdTopSwapBuiltForResiliency

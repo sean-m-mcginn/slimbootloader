@@ -846,54 +846,15 @@ SetBootPartition (
 }
 
 /**
-  Count boot failures and react appropriately.
-
-  @param[in] IsSwitchToBackup     Whether to switch to backup partition
-                                  (as opposed to primary partition) when
-                                  failure count reaches threshold.
+  TODO
 **/
-VOID
-EFIAPI
-HandleBootFailures (
-  BOOLEAN IsSwitchToBackup
-)
-{
-  if (WasPreviousBootFailure ()) {
-    ClearBootStatus ();
-    IncrementFailedBootCount ();
-    DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", GetFailedBootCount ()));
-    if (GetFailedBootCount () >= 3) {
-      DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching partitions...\n"));
-      SetBootPartition (IsSwitchToBackup ? BackupPartition : PrimaryPartition);
-      ResetSystem (EfiResetCold);
-    }
-  }
-}
-
-/**
-  Update recovery-related data and react appropriately.
-**/
-VOID
-EFIAPI
-HandleRecovery (
+EFI_STATUS
+SwitchBootPartition (
   VOID
   )
-{
-  if (GetBootMode () == BOOT_ON_FLASH_UPDATE) {
-    if (GetCurrentBootPartition () == 1) {
-      HandleBootFailures (FALSE);
-    }
-  } else {
-      if (GetCurrentBootPartition () == 1) {
-        if (GetFailedBootCount () >= 3) {
-          DEBUG ((DEBUG_INFO, "Switching to firmware update mode to fix corrupted partition...\n"));
-          SetBootMode (BOOT_ON_FLASH_UPDATE);
-        }
-      } else {
-        HandleBootFailures (TRUE);
-      }
+  {
+    return SetBootPartition (GetCurrentBootPartition() == PrimaryPartition ? BackupPartition : PrimaryPartition);
   }
-}
 
 /**
   Initialize Board specific things in Stage1 Phase
@@ -964,9 +925,6 @@ DEBUG_CODE_END();
     }
     PlatformNameInit ();
     SetBootMode (IsFirmwareUpdate() ? BOOT_ON_FLASH_UPDATE : GetPlatformPowerState());
-    if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
-      HandleRecovery ();
-    }
     PlatformFeaturesInit ();
     break;
   case PreMemoryInit:

@@ -70,6 +70,7 @@
   ThunkLib
   LocalApicLib
   UniversalPayloadLib
+  TcoTimerLib
 
 [Guids]
   gFspReservedMemoryResourceHobGuid
@@ -146,5 +147,7 @@
   gPlatformModuleTokenSpaceGuid.PcdAcpiTablesRsdp
   gPlatformCommonLibTokenSpaceGuid.PcdBuildSmmHobs
   gPlatformCommonLibTokenSpaceGuid.PcdBootPerformanceMask
+  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled
+
 [Depex]
   TRUE

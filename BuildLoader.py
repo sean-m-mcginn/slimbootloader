@@ -264,6 +264,8 @@ class BaseBoard(object):
         self.BUILD_ARCH            = ''
         self.KEYH_SVN              = 0
         self.CFGDATA_SVN           = 0
+        self.BUILD_IDENTICAL_TS    = 0
+        self.ENABLE_SBL_RESILIENCY = 0
 
         self.RTCM_RSVD_SIZE        = 0xFF000
 
@@ -915,7 +917,7 @@ class Build(object):
         bins = bytearray(fo.read())
 
         # Patch flashmap to indicate boot partiton
-        if not self._board.BUILD_RESILIENT_TS:
+        if not self._board.BUILD_IDENTICAL_TS:
             fmapoff = bytes_to_value(bins[-8:-4]) - bytes_to_value(bins[-4:]) + self._board.STAGE1A_FV_OFFSET
             fmaphdr = FLASH_MAP.from_buffer (bins, fmapoff)
             if fmaphdr.sig != FLASH_MAP.FLASH_MAP_SIGNATURE:
@@ -960,7 +962,7 @@ class Build(object):
         stage1b_path   = os.path.join(self._fv_dir, 'STAGE1B.fd')
         stage1b_b_path = os.path.join(self._fv_dir, 'STAGE1B_B.fd')
 
-        if self._board.STAGE1B_XIP and not self._board.BUILD_RESILIENT_TS:
+        if self._board.STAGE1B_XIP and not self._board.BUILD_IDENTICAL_TS:
             # Rebase stage1b.fd
             print("Rebasing STAGE1B_B")
             rebase_stage (stage1b_path, stage1b_b_path, -self._board.REDUNDANT_SIZE)

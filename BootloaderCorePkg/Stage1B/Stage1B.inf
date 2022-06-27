@@ -55,6 +55,8 @@
   DebugAgentLib
   ContainerLib
   StageLib
+  TcoTimerLib
+  TopSwapLib
 
 [Guids]
   gPlatformModuleTokenSpaceGuid
@@ -99,6 +101,8 @@
   gPlatformModuleTokenSpaceGuid.PcdLoaderAcpiNvsSize
   gPlatformModuleTokenSpaceGuid.PcdLoaderAcpiReclaimSize
   gPlatformModuleTokenSpaceGuid.PcdEnableSetup
+  gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled
+  gPlatformModuleTokenSpaceGuid.PcdBootFailureThreshold
 
 [Depex]
   TRUE

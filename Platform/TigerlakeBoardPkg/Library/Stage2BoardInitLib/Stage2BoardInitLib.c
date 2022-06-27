@@ -1029,15 +1029,6 @@ BoardInit (
       IoWrite16 (EC_C_PORT, EC_C_ACPI_ENABLE);
     }
 
-    if (PcdGetBool (PcdSblResiliencyEnabled) && PcdGetBool (PcdTopSwapBuiltForResiliency)) {
-      HaltWatchDogTimer ();
-
-      // Clear failed boot counter if recovery/update not indicated
-      if (GetBootMode() != BOOT_ON_FLASH_UPDATE) {
-        ClearFailedBootCount ();
-      }
-    }
-
     break;
 
   case ReadyToBoot:

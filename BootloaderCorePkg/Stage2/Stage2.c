@@ -249,6 +249,15 @@ NormalBootPath (
 
   BoardInit (EndOfStages);
 
+  if (PcdGetBool (PcdSblResiliencyEnabled)) {
+    HaltTcoTimer ();
+
+    // Clear failed boot counter if recovery/update not indicated
+    if (GetBootMode() != BOOT_ON_FLASH_UPDATE) {
+        ClearFailedBootCount ();
+    }
+  }
+
   PayloadId = GetPayloadId ();
   if (PayloadId == 0) {
     // For built-in payload including OsLoader and FirmwareUpdate, it will handle
@@ -338,6 +347,15 @@ S3ResumePath (
 
   // Call the board notification
   BoardInit (EndOfStages);
+
+  if (PcdGetBool (PcdSblResiliencyEnabled)) {
+    HaltTcoTimer ();
+
+    // Clear failed boot counter if recovery/update not indicated
+    if (GetBootMode() != BOOT_ON_FLASH_UPDATE) {
+        ClearFailedBootCount ();
+    }
+  }
 
   // Call board and FSP Notify ReadyToBoot
   BoardNotifyPhase (ReadyToBoot);
