@@ -1197,6 +1197,14 @@ InitFirmwareRecovery (
 
   RomBase = (UINT32) (0x100000000ULL - FlashMap->RomSize);
 
+  Status = SetStateMachineFlag (FW_UPDATE_SM_RECOVERY);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "SetStateMachineFlag, Status = 0x%x\n", Status));
+    return Status;
+  }
+
+  ClearFailedBootCount ();
+
   Status = GetRegionInfo (&TopSwapRegionSize, &RedundantRegionSize, NULL);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "GetRegionInfo, Status = 0x%x\n", Status));
@@ -1242,16 +1250,19 @@ InitFirmwareRecovery (
     return Status;
   }
 
-  ClearFailedBootCount ();
-
-  // Stop the update process since it's a bad update
-  if (IsBackupUpdate) {
-    SetStateMachineFlag (FW_UPDATE_SM_DONE);
+  Status = SetStateMachineFlag (FW_UPDATE_SM_DONE);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "SetStateMachineFlag, Status = 0x%x\n", Status));
+    return Status;
   }
 
-  SetBootPartition (PrimaryPartition);
+  Status = SetBootPartition (PrimaryPartition);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "SetBootPartition, Status = 0x%x\n", Status));
+    return Status;
+  }
 
-  return Status;
+  return EFI_SUCCESS;
 }
 
 /**
@@ -1380,6 +1391,7 @@ PayloadMain (
   FLASH_MAP     *FlashMap;
   EFI_STATUS    Status;
   UINT32        BiosRgnSize;
+  UINT8         StateMachine;
 
   //
   // Prepare Console Print
@@ -1441,7 +1453,9 @@ PayloadMain (
   //
   // Perform firmware recovery/update
   //
-  if (PcdGetBool (PcdSblResiliencyEnabled) && GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
+  GetStateMachineFlag (&StateMachine);
+  if (PcdGetBool (PcdSblResiliencyEnabled) &&
+     (StateMachine == FW_UPDATE_SM_RECOVERY || GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold))) {
     DEBUG((DEBUG_ERROR, "Triggered FW recovery!\n"));
     Status = InitFirmwareRecovery ();
     if (EFI_ERROR (Status)) {

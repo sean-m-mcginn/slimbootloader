@@ -40,7 +40,9 @@ GetTopSwapBit (
   OUT BOOLEAN *Val
   )
 {
-  Val = NULL;
+  if (Val != NULL) {
+    *Val = FALSE;
+  }
   return EFI_SUCCESS;
 }
 

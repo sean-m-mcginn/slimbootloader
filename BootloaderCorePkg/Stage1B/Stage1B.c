@@ -318,13 +318,20 @@ HandleBootFailures (
   BOOLEAN IsSwitchToBackup
 )
 {
+  UINT32 FailedBootCount;
+  EFI_STATUS Status;
+
   if (WasPreviousTcoTimeout ()) {
     ClearTcoStatus ();
     IncrementFailedBootCount ();
-    DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", GetFailedBootCount ()));
-    if (GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
+    FailedBootCount = GetFailedBootCount ();
+    DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", FailedBootCount));
+    if (FailedBootCount >= PcdGet8 (PcdBootFailureThreshold)) {
       DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching partitions...\n"));
-      SetTopSwapBit (IsSwitchToBackup);
+      Status = SetTopSwapBit (IsSwitchToBackup);
+      if (EFI_ERROR (Status)) {
+        return;
+      }
       ResetSystem (EfiResetCold);
     }
   }
@@ -344,12 +351,7 @@ HandleRecovery (
       HandleBootFailures (FALSE);
     }
   } else {
-      if (GetCurrentBootPartition () == BackupPartition) {
-        if (GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
-          DEBUG ((DEBUG_INFO, "Switching to firmware update mode to fix corrupted partition...\n"));
-          SetBootMode (BOOT_ON_FLASH_UPDATE);
-        }
-      } else {
+      if (GetCurrentBootPartition () == PrimaryPartition) {
         HandleBootFailures (TRUE);
       }
   }

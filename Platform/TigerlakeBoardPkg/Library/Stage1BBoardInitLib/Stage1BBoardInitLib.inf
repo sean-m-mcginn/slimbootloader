@@ -49,6 +49,7 @@
   BoardSupportLib
   WatchDogTimerLib
   TccLib
+  TopSwapLib
 
 [Guids]
 

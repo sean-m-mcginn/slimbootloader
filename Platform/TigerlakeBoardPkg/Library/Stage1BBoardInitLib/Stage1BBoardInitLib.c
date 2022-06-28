@@ -41,6 +41,7 @@
 #include <Library/WatchDogTimerLib.h>
 #include <Library/SocInitLib.h>
 #include <Library/TccLib.h>
+#include <Library/TopSwapLib.h>
 
 CONST PLT_DEVICE  mPlatformDevices[]= {
   {{0x00001700}, OsBootDeviceSata  , 0 },
@@ -557,6 +558,9 @@ UpdateFspConfig (
 BOOLEAN
 IsFirmwareUpdate ()
 {
+  BOOLEAN TopSwapBit;
+  EFI_STATUS Status;
+
   //
   // Check if state machine is set to capsule processing mode.
   //
@@ -568,6 +572,11 @@ IsFirmwareUpdate ()
   // Check if platform firmware update trigger is set.
   //
   if (IoRead32 (ACPI_BASE_ADDRESS + R_ACPI_IO_OC_WDT_CTL) & BIT16) {
+    return TRUE;
+  }
+
+  Status = GetTopSwapBit (&TopSwapBit);
+  if (!EFI_ERROR(Status) && TopSwapBit) {
     return TRUE;
   }
 

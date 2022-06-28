@@ -51,7 +51,7 @@ SetTopSwapBit (
 
   P2sbBar    = MmioRead32 (P2sbBase + 0x10);
   P2sbBar  &= 0xFFFFFFF0;
-  if (P2sbBar != 0xFFFFFFF0) {
+  if (P2sbBar == 0xFFFFFFF0) {
     DEBUG ((DEBUG_ERROR, "P2sbBar could not be unhidden!"));
     return EFI_ACCESS_DENIED;
   }
@@ -110,6 +110,10 @@ GetTopSwapBit (
   UINT32    Data32;
   BOOLEAN   P2sbIsHidden;
 
+  if (Val == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   //
   // Get Top swap register Bit0 in PCH Private Configuration Space.
   //
@@ -127,7 +131,7 @@ GetTopSwapBit (
 
   P2sbBar    = MmioRead32 (P2sbBase + 0x10);
   P2sbBar  &= 0xFFFFFFF0;
-  if (P2sbBar != 0xFFFFFFF0) {
+  if (P2sbBar == 0xFFFFFFF0) {
     DEBUG ((DEBUG_ERROR, "P2sbBar could not be unhidden!"));
     return EFI_ACCESS_DENIED;
   }

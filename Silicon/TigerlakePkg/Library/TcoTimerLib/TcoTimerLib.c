@@ -57,7 +57,6 @@ SetupTcoTimer (
 
   // Reset the TCO timer.
   IoOr16 (TCO_BASE_ADDRESS, BIT0);
-
 }
 
 /**
