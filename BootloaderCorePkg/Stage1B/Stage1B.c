@@ -348,10 +348,12 @@ HandleRecovery (
 {
   if (GetBootMode () == BOOT_ON_FLASH_UPDATE) {
     if (GetCurrentBootPartition () == BackupPartition) {
+      // Count failures on erroneous update
       HandleBootFailures (FALSE);
     }
   } else {
       if (GetCurrentBootPartition () == PrimaryPartition) {
+        // Count failures on spontaneous corruption
         HandleBootFailures (TRUE);
       }
   }
