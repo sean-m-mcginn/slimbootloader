@@ -378,7 +378,7 @@ SecStartup2 (
   BoardInit (PostTempRamInit);
   AddMeasurePoint (0x1040);
 
-  if (PcdGetBool (PcdSblResiliencyEnabled) /* && !DebugCodeEnabled() */) {
+  if (PcdGetBool (PcdSblResiliencyEnabled) /*&& !IsDebugEnabled ()*/) {
       SetupTcoTimer (PcdGet16 (PcdTcoTimeout));
     } else {
       DisableTcoTimer ();

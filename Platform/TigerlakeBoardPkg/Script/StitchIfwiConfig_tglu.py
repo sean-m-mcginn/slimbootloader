@@ -118,7 +118,7 @@ def check_parameter(para_list):
                 return False
     return True
 
-def get_xml_change_list (platform, plt_params_list, is_resiliency_enabled):
+def get_xml_change_list (platform, plt_params_list):
     xml_change_list = []
     xml_change_list.append ([
       # Path                                                                            | value |
@@ -167,7 +167,7 @@ def get_xml_change_list (platform, plt_params_list, is_resiliency_enabled):
         ('./FlexIO/Type-CSubsystemConfiguration/IomBinaryFile',                      '$SourceDir\IomBinaryFile.bin'),
         ('./FlexIO/Type-CSubsystemConfiguration/PhyBinaryFile',                      '$SourceDir\PhyBinaryFile.bin'),
         ('./FlexIO/Type-CSubsystemConfiguration/TbtBinaryFile',                      '$SourceDir\TbtBinaryFile.bin'),
-        ('./FlashSettings/BiosConfiguration/TopSwapOverride',                        '2MB' if is_resiliency_enabled else '512KB'),
+        ('./FlashSettings/BiosConfiguration/TopSwapOverride',                        '2MB'),
         ('./IntelMeKernel/IntelMeMeasuredBootConfiguration/MeMeasuredBootState',     'Disabled'),
     ])
 

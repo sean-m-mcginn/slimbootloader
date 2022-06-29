@@ -35,7 +35,7 @@ if not os.path.exists (sblopen_dir):
 if not os.path.exists (sblopen_dir):
     raise  Exception("Please set env 'SBL_SOURCE' to SBL open source root folder")
 
-def gen_xml_file(stitch_dir, stitch_cfg_file, btg_profile, plt_params_list, platform, tpm, res):
+def gen_xml_file(stitch_dir, stitch_cfg_file, btg_profile, plt_params_list, platform, tpm):
     print ("Generating xml file .........")
 
     fit_tool     = os.path.join (stitch_dir, 'Fit', 'fit')
@@ -47,7 +47,7 @@ def gen_xml_file(stitch_dir, stitch_cfg_file, btg_profile, plt_params_list, plat
 
     tree = ET.parse(new_xml_file)
 
-    xml_change_list = stitch_cfg_file.get_xml_change_list (platform, plt_params_list, res)
+    xml_change_list = stitch_cfg_file.get_xml_change_list (platform, plt_params_list)
     for each in xml_change_list:
         for xml_path, value in each:
             node = tree.find('%s' % xml_path)
@@ -108,7 +108,7 @@ def replace_components (ifwi_src_path, stitch_cfg_file):
     for flash_path, file_path, comp_alg, pri_key in replace_list:
         replace_component (ifwi_src_path, flash_path, file_path, comp_alg, pri_key)
 
-def stitch (stitch_dir, stitch_cfg_file, sbl_file, btg_profile, plt_params_list, platform_data, platform, tpm, res, full_rdundant = True):
+def stitch (stitch_dir, stitch_cfg_file, sbl_file, btg_profile, plt_params_list, platform_data, platform, tpm, full_rdundant = True):
     temp_dir = os.path.abspath(os.path.join (stitch_dir, 'Temp'))
     if os.path.exists(temp_dir):
         shutil.rmtree(temp_dir, ignore_errors=True)
@@ -140,7 +140,7 @@ def stitch (stitch_dir, stitch_cfg_file, sbl_file, btg_profile, plt_params_list,
     replace_components (os.path.join(temp_dir, "SlimBootloader.bin"), stitch_cfg_file)
 
     # Generate xml
-    gen_xml_file(stitch_dir, stitch_cfg_file, btg_profile, plt_params_list, platform, tpm, res)
+    gen_xml_file(stitch_dir, stitch_cfg_file, btg_profile, plt_params_list, platform, tpm)
 
     if sign_bin_flag:
         update_btGuard_manifests(stitch_dir, stitch_cfg_file, btg_profile, tpm)
@@ -173,7 +173,6 @@ def main():
     ap.add_argument('-t', dest='tpm', default = 'ptt', choices=['ptt', 'dtpm', 'none'], help='specify TPM type')
     ap.add_argument('-o', dest='option', default = '', help = "Platform specific stitch option. Format: '-o option1;option2;...' For each option its format is 'parameter:data'. Try -o help for more information")
     ap.add_argument('-op', dest='outpath', default = '', help = "Specify path to write output IFIW and signed bin files")
-    ap.add_argument('-res', dest='res', action='store_true', help = "Specify if resiliency enabled")
 
     args = ap.parse_args()
 
@@ -208,7 +207,7 @@ def main():
 
     work_dir = os.path.abspath (args.work_dir)
     os.chdir(work_dir)
-    if stitch (work_dir, stitch_cfg_file, sbl_file, args.btg_profile, plt_params_list, args.plat_data, args.platform, args.tpm, args.res):
+    if stitch (work_dir, stitch_cfg_file, sbl_file, args.btg_profile, plt_params_list, args.plat_data, args.platform, args.tpm):
         raise Exception ('Stitching process failed !')
     os.chdir(curr_dir)
 

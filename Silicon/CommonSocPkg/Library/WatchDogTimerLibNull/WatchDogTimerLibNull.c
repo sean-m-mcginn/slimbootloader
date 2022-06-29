@@ -1,17 +1,26 @@
 /** @file
-  Header file for watch dog timer library implementation.
+  Library for watch dog timer.
 
   Copyright (c) 2021, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
-#ifndef WATCH_DOG_TIMBER_LIB_H_
-#define WATCH_DOG_TIMBER_LIB_H_
 
-#define  WDT_TIMEOUT_TCC_DSO           200    // 200 seconds
-#define  WDT_FLAG_TCC_DSO_IN_PROGRESS  BIT17
 
-#include <Uefi/UefiBaseType.h>
+#include <Library/WatchDogTimerLib.h>
+
+/**
+  Get Watchdog Timer address
+
+  @retval UINT32                  Watchdog's address
+**/
+UINT32
+WdtGetAddress (
+  VOID
+  )
+{
+  return 0;
+}
 
 /**
   Reloads WDT with new timeout value and starts it.
@@ -27,8 +36,10 @@ EFIAPI
 WdtReloadAndStart (
   IN  UINT32  TimeoutValue,
   IN  UINT32  Flags
-  );
-
+  )
+{
+  return EFI_UNSUPPORTED;
+}
 
 /**
   Disables WDT timer and cleared the specified WDT timer flag.
@@ -40,8 +51,9 @@ VOID
 EFIAPI
 WdtDisable (
   IN  UINT32  Flags
-  );
-
+  )
+{
+}
 
 /**
   Clear WDT flags in scratchpad
@@ -53,7 +65,9 @@ VOID
 EFIAPI
 WdtClearScratchpad (
   IN  UINT32  Flags
-  );
+  )
+{
+}
 
 /**
   Set WDT flags in scratchpad
@@ -65,7 +79,9 @@ VOID
 EFIAPI
 WdtSetScratchpad (
   IN  UINT32  Flags
-  );
+  )
+{
+}
 
 /**
   Get WDT flags in scratchpad
@@ -77,7 +93,10 @@ UINT32
 EFIAPI
 WdtGetScratchpad (
   IN  UINT32  Flags
-  );
+  )
+{
+  return 0;
+}
 
 /**
   Returns if the previous reset is triggered by timer expiration.
@@ -89,7 +108,12 @@ UINT8
 EFIAPI
 IsWdtTimeout (
   VOID
-  );
+  )
+{
+  return 0;
+}
+
+
 
 /**
   Returns if specified timer flag is set.
@@ -103,8 +127,10 @@ UINT8
 EFIAPI
 IsWdtFlagsSet (
   IN  UINT32  Flags
-  );
-
+  )
+{
+  return 0;
+}
 
 /**
   Returns WDT enabled/disabled status.
@@ -116,8 +142,10 @@ UINT8
 EFIAPI
 IsWdtEnabled (
   VOID
-  );
-
+  )
+{
+  return 0;
+}
 
 /**
   Returns WDT locked status.
@@ -129,7 +157,10 @@ UINT8
 EFIAPI
 IsWdtLocked (
   VOID
-  );
+  )
+{
+  return 0;
+}
 
 /**
   Get the number of failed boots.
@@ -141,7 +172,10 @@ UINT32
 EFIAPI
 GetFailedBootCount (
   VOID
-  );
+  )
+{
+  return 0;
+}
 
 /**
   Increment the number of failed boots.
@@ -150,7 +184,9 @@ VOID
 EFIAPI
 IncrementFailedBootCount (
   VOID
-  );
+  )
+{
+}
 
 /**
   Set the number of failed boots to 0.
@@ -159,6 +195,6 @@ VOID
 EFIAPI
 ClearFailedBootCount (
   VOID
-  );
-
-#endif
+  )
+{
+}

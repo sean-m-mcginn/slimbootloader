@@ -7,7 +7,6 @@
 **/
 
 #include <Library/TopSwapLib.h>
-#include <Library/BaseLib.h>
 
 /**
   Set the top swap bit in the appropriate register.
@@ -33,7 +32,7 @@ SetTopSwapBit (
 
   @retval EFI_SUCCESS             if TS bit retrieved successfully.
   @retval Others                  if an error occured when getting TS bit.
-**/  
+**/
 EFI_STATUS
 EFIAPI
 GetTopSwapBit (

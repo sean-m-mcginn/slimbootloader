@@ -131,6 +131,9 @@ class Board(BaseBoard):
         if self.ENABLE_SOURCE_DEBUG:
             self.STAGE1B_SIZE += 0x4000
 
+        if self.FSPDEBUG_MODE:
+            self.STAGE1B_SIZE += 0x38000
+
         self.ENABLE_FWU           = 1
         self.ENABLE_SMBIOS        = 1
         self.ENABLE_CSME_UPDATE   = 1
@@ -169,6 +172,10 @@ class Board(BaseBoard):
 
         self.BUILD_IDENTICAL_TS      = 1
         self.ENABLE_SBL_RESILIENCY   = 1
+
+        if self.FSPDEBUG_MODE:
+            self.ENABLE_SBL_RESILIENCY = 0
+            self.BUILD_IDENTICAL_TS    = 0
 
         if self.ENABLE_SBL_RESILIENCY:
             self.BUILD_IDENTICAL_TS   = 1

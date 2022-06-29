@@ -71,6 +71,7 @@
   LocalApicLib
   UniversalPayloadLib
   TcoTimerLib
+  WatchDogTimerLib
 
 [Guids]
   gFspReservedMemoryResourceHobGuid

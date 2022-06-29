@@ -57,6 +57,7 @@
   StageLib
   TcoTimerLib
   TopSwapLib
+  WatchDogTimerLib
 
 [Guids]
   gPlatformModuleTokenSpaceGuid
