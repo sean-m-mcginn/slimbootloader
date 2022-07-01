@@ -326,7 +326,7 @@ HandleBootFailures (
     FailedBootCount = GetFailedBootCount ();
     DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", FailedBootCount));
     if (FailedBootCount >= PcdGet8 (PcdBootFailureThreshold)) {
-      DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching to partition %d\n", NewParition));
+      DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching to partition: %d\n", NewParition));
       Status = SetBootPartition (NewParition);
       if (EFI_ERROR (Status)) {
         return;
