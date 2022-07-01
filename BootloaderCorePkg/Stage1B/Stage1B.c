@@ -308,14 +308,13 @@ CreateConfigDatabase (
 /**
   Count boot failures and react appropriately.
 
-  @param[in] IsSwitchToBackup     Whether to switch to backup partition
-                                  (as opposed to primary partition) when
-                                  failure count reaches threshold.
+  @param[in] NewPartition  The partition to switch to when the boot
+                           failure threshold is reached.
 **/
 VOID
 EFIAPI
 HandleBootFailures (
-  BOOLEAN IsSwitchToBackup
+  BOOT_PARTITION NewParition
 )
 {
   UINT32 FailedBootCount;
@@ -327,8 +326,8 @@ HandleBootFailures (
     FailedBootCount = GetFailedBootCount ();
     DEBUG ((DEBUG_INFO, "Boot failure occured! Failed boot count: %d\n", FailedBootCount));
     if (FailedBootCount >= PcdGet8 (PcdBootFailureThreshold)) {
-      DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching partitions...\n"));
-      Status = SetTopSwapBit (IsSwitchToBackup);
+      DEBUG ((DEBUG_INFO, "Boot failure threshold reached! Switching to partition %d\n", NewParition));
+      Status = SetBootPartition (NewParition);
       if (EFI_ERROR (Status)) {
         return;
       }
@@ -349,13 +348,13 @@ HandleRecovery (
   if (GetBootMode () == BOOT_ON_FLASH_UPDATE) {
     if (GetCurrentBootPartition () == BackupPartition) {
       // Count failures on erroneous update
-      HandleBootFailures (FALSE);
+      HandleBootFailures (PrimaryPartition);
     }
   } else {
-      if (GetCurrentBootPartition () == PrimaryPartition) {
-        // Count failures on spontaneous corruption
-        HandleBootFailures (TRUE);
-      }
+    if (GetCurrentBootPartition () == PrimaryPartition) {
+      // Count failures on spontaneous corruption
+      HandleBootFailures (BackupPartition);
+    }
   }
 }
 

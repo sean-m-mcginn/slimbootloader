@@ -14,56 +14,50 @@
 #include <CpuRegsAccess.h>
 
 /**
-  Program/enable TCO base address.
+  Program/enable TCO base address and halt TCO timer
 **/
 VOID
 EFIAPI
-SetupTcoBaseAddress (
+InitTcoTimer (
   VOID
   )
 {
+  // Program TCO base address
   PciWrite32 (PCI_LIB_ADDRESS(0, 31, 4, 0x50), TCO_BASE_ADDRESS);
-  PciWrite32 (PCI_LIB_ADDRESS(0, 31, 4, 0x54), BIT8);
-}
 
-/**
-  Program/enable TCO base address and halt TCO timer.
-**/
-VOID
-EFIAPI
-DisableTcoTimer (
-  VOID
-  )
-{
-  SetupTcoBaseAddress ();
+  // Enable TCO base address
+  PciWrite32 (PCI_LIB_ADDRESS(0, 31, 4, 0x54), BIT8);
+
   HaltTcoTimer ();
 }
 
 /**
-  Program/enable TCO base address, set the TCO timeout, and restart the TCO timer.
+  Set the TCO timeout and start countdown
 
   @param[in] Timeout    Number of 0.6s ticks to wait
 **/
 VOID
 EFIAPI
-SetupTcoTimer (
+StartTcoTimer (
   IN UINT16 Timeout
   )
 {
-  SetupTcoBaseAddress ();
 
-  // Set the TCO timer to given number of 0.6s ticks.
+  // Set the TCO timer to given number of 0.6s ticks
   IoOr16 (TCO_BASE_ADDRESS + 0x12, Timeout);
 
-  // Reset the TCO timer.
+  // Un-halt the TCO timer
+  IoAnd16 (TCO_BASE_ADDRESS + 0x8, (UINT16)~BIT11);
+
+  // Re-start the TCO timer with full timeout
   IoOr16 (TCO_BASE_ADDRESS, BIT0);
 }
 
 /**
-  Check if TCO status indicates failure on last boot.
+  Check if TCO status indicates failure on last boot
 
-  @return TRUE if last boot failed.
-  @return FALSE if last boot succeeded.
+  @return TRUE if last boot failed
+  @return FALSE if last boot succeeded
 **/
 BOOLEAN
 EFIAPI
@@ -75,7 +69,7 @@ WasPreviousTcoTimeout (
 }
 
 /**
-  Clear TCO status.
+  Clear TCO status
 **/
 VOID
 EFIAPI
@@ -87,7 +81,7 @@ ClearTcoStatus (
 }
 
 /**
-  Halt the TCO timer.
+  Halt the TCO timer
 **/
 VOID
 EFIAPI

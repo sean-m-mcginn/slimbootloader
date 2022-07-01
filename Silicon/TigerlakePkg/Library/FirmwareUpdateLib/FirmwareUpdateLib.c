@@ -67,25 +67,6 @@ InitCsmeUpdInputData (
 }
 
 /**
-  Switch between the boot partitions.
-
-  This function will use platform specific method of switching
-  between primary and backup partitions.
-
-  @param[in] Partition        Partition to select
-
-  @retval  EFI_SUCCESS        Switched to desired partition successfully.
-  @retval  others             Error happening.
-**/
-EFI_STATUS
-SetBootPartition (
-  IN BOOT_PARTITION  Partition
-  )
-{
-  return SetTopSwapBit (Partition == BackupPartition);
-}
-
-/**
   Get offset of Stage 1A in the capsule image
 
   This function will get stage 1A base address from flash map.

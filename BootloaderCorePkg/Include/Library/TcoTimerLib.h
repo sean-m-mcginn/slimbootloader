@@ -9,30 +9,30 @@
 #define TCO_TIMER_LIB_H_
 
 /**
-  Program/enable TCO base address and halt TCO timer.
+  Program/enable TCO base address and halt TCO timer
 **/
 VOID
 EFIAPI
-DisableTcoTimer (
+InitTcoTimer (
   VOID
   );
 
 /**
-  Program/enable TCO base address, set the TCO timeout, and restart the TCO timer.
+  Set the TCO timeout and start countdown
 
   @param[in] Timeout    Number of 0.6s ticks to wait
 **/
 VOID
 EFIAPI
-SetupTcoTimer (
+StartTcoTimer (
   IN UINT16 Timeout
   );
 
 /**
-  Check if TCO status indicates failure on last boot.
+  Check if TCO status indicates failure on last boot
 
-  @return TRUE if last boot failed.
-  @return FALSE if last boot succeeded.
+  @return TRUE if last boot failed
+  @return FALSE if last boot succeeded
 **/
 BOOLEAN
 EFIAPI
@@ -41,7 +41,7 @@ WasPreviousTcoTimeout (
   );
 
 /**
-  Clear TCO status.
+  Clear TCO status
 **/
 VOID
 EFIAPI
@@ -50,7 +50,7 @@ ClearTcoStatus (
   );
 
 /**
-  Halt the TCO timer.
+  Halt the TCO timer
 **/
 VOID
 EFIAPI

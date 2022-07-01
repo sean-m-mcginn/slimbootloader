@@ -233,9 +233,9 @@ class Board(BaseBoard):
             'PsdLib|Silicon/$(SILICON_PKG_NAME)/Library/PsdLib/PsdLib.inf',
             'HeciInitLib|Silicon/$(SILICON_PKG_NAME)/Library/HeciInitLib/HeciInitLib.inf',
             'MeExtMeasurementLib|Silicon/$(SILICON_PKG_NAME)/Library/MeExtMeasurementLib/MeExtMeasurementLib.inf',
-            'TcoTimerLib|Silicon/CommonSocPkg/Library/TcoTimerLibNull/TcoTimerLibNull.inf',
-            'TopSwapLib|Silicon/CommonSocPkg/Library/TopSwapLibNull/TopSwapLibNull.inf',
-            'WatchDogTimerLib|Silicon/CommonSocPkg/Library/WatchDogTimerLibNull/WatchDogTimerLibNull.inf'
+            'TcoTimerLib|Silicon/CommonSocPkg/Library/TcoTimerLib/TcoTimerLib.inf',
+            'TopSwapLib|Silicon/CommonSocPkg/Library/TopSwapLib/TopSwapLib.inf',
+            'WatchDogTimerLib|Silicon/CommonSocPkg/Library/WatchDogTimerLib/WatchDogTimerLib.inf'
         ]
 
         if self.BUILD_CSME_UPDATE_DRIVER:

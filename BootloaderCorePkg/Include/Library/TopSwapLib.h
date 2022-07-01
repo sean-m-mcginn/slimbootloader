@@ -10,33 +10,48 @@
 #define _TOP_SWAP_LIB_H_
 
 #include <Uefi/UefiBaseType.h>
+#include <Library/BootloaderCommonLib.h>
+
+/** @file
+  Library for top swap.
+
+  Copyright (c) 2022, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
+
+**/
+
+#include <Uefi/UefiBaseType.h>
+#include <Library/BootloaderCommonLib.h>
 
 /**
-  Set the top swap bit in the appropriate register.
+  Switch between the boot partitions.
 
-  @param[in] Val    The value to set the TS bit.
+  This function will set the top swap register bit with the given partition.
 
-  @retval EFI_SUCCESS             if TS bit set sucessfully.
-  @retval Others                  if an error occured when setting TS bit.
+  @param[in] Partition        Partition to be indicated in register.
+
+  @retval  EFI_SUCCESS        Parition successfully set.
+  @retval  others             Error occurred.
 **/
 EFI_STATUS
-EFIAPI
-SetTopSwapBit (
-  IN BOOLEAN Val
+SetBootPartition (
+  IN BOOT_PARTITION  Partition
   );
 
 /**
-  Get the top swap bit from the appropriate register.
+  Get the current boot partition.
 
-  @param[out] Val    The current value of the TS bit.
+  This function will read the top swap register bit for the current partition.
 
-  @retval EFI_SUCCESS             if TS bit retrieved successfully.
-  @retval Others                  if an error occured when getting TS bit.
+  @param[in] Partition        Partition indicated by register.
+
+  @retval  EFI_SUCCESS        Partition successfully retrieved.
+  @retval  others             Error occurred.
 **/  
 EFI_STATUS
 EFIAPI
-GetTopSwapBit (
-  OUT BOOLEAN *Val
+GetBootPartition (
+  OUT BOOT_PARTITION *Partition
   );
 
 #endif

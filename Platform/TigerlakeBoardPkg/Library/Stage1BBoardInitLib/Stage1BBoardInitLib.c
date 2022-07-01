@@ -558,8 +558,8 @@ UpdateFspConfig (
 BOOLEAN
 IsFirmwareUpdate ()
 {
-  BOOLEAN TopSwapBit;
-  EFI_STATUS Status;
+  BOOT_PARTITION  Partition;
+  EFI_STATUS      Status;
 
   //
   // Check if state machine is set to capsule processing mode.
@@ -575,8 +575,11 @@ IsFirmwareUpdate ()
     return TRUE;
   }
 
-  Status = GetTopSwapBit (&TopSwapBit);
-  if (!EFI_ERROR(Status) && TopSwapBit) {
+  //
+  // Check if top swap bit is set (signifies recovery if it gets here)
+  //
+  Status = GetBootPartition (&Partition);
+  if (!EFI_ERROR(Status) && Partition == BackupPartition) {
     return TRUE;
   }
 
