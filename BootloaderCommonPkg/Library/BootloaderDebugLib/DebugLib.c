@@ -259,19 +259,3 @@ DebugPrintLevelEnabled (
 {
   return (BOOLEAN) ((ErrorLevel & PcdGet32(PcdFixedDebugPrintErrorLevel)) != 0);
 }
-
-/**
-  Returns TRUE if any sort of debugging is enabled.
-
-  @retval  TRUE    Some debugging is enabled.
-  @retval  FALSE   No debugging is enabbled.
-
-**/
-BOOLEAN
-EFIAPI
-IsDebugEnabled (
-  VOID
-  )
-{
-    return (BOOLEAN) (PcdGet8(PcdDebugPropertyMask) != 0);
-}
