@@ -123,13 +123,16 @@ class Board(BaseBoard):
             self.PAYLOAD_SIZE         = 0x00024000
         else:
             self.STAGE1A_SIZE         = 0x00016000
-            self.STAGE1B_SIZE         = 0x00180000
+            self.STAGE1B_SIZE         = 0x00148000
             self.STAGE2_SIZE          = 0x00110000
             self.STAGE2_FD_SIZE       = 0x00200000
             self.PAYLOAD_SIZE         = 0x00080000
 
         if self.ENABLE_SOURCE_DEBUG:
             self.STAGE1B_SIZE += 0x4000
+
+        if self.FSPDEBUG_MODE:
+            self.STAGE1B_SIZE += 0x38000
 
         self.ENABLE_FWU           = 1
         self.ENABLE_SMBIOS        = 1
@@ -173,6 +176,10 @@ class Board(BaseBoard):
         if self.ENABLE_SBL_RESILIENCY:
             self.BUILD_IDENTICAL_TS   = 1
 
+        if self.FSPDEBUG_MODE:
+            self.BUILD_IDENTICAL_TS    = 0
+            self.ENABLE_SBL_RESILIENCY = 0
+
         if self.BUILD_IDENTICAL_TS:
             self.TOP_SWAP_SIZE        = 0x200000
             self.REDUNDANT_SIZE       = 0x1E0000
@@ -195,7 +202,7 @@ class Board(BaseBoard):
             self.SIIPFW_SIZE += self.TMAC_SIZE
 
         if self.BUILD_IDENTICAL_TS:
-            Redundant_Components_Size = self.UCODE_SIZE + self.STAGE2_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE + self.KEYHASH_SIZE
+            Redundant_Components_Size = self.STAGE2_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE
         else:
             Redundant_Components_Size = self.UCODE_SIZE + self.STAGE2_SIZE + self.STAGE1B_SIZE + self.FWUPDATE_SIZE + self.CFGDATA_SIZE + self.KEYHASH_SIZE
         if Redundant_Components_Size > self.REDUNDANT_SIZE:
@@ -226,7 +233,10 @@ class Board(BaseBoard):
         self.ACM_SIZE             = 0x00040000 + self.KM_SIZE + self.BPM_SIZE
         # adjust ACM_SIZE to meet 256KB alignment (to align 256KB ACM size)
         if self.ACM_SIZE > 0:
-            acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE
+            if self.BUILD_IDENTICAL_TS:
+                acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE - self.KEYHASH_SIZE
+            else:
+                acm_top = self.FLASH_LAYOUT_START - self.STAGE1A_SIZE - self.DIAGNOSTICACM_SIZE
             acm_btm = acm_top - self.ACM_SIZE
             acm_btm = (acm_btm & 0xFFFC0000)
             self.ACM_SIZE     = acm_top - acm_btm
@@ -432,31 +442,31 @@ class Board(BaseBoard):
         if self.BUILD_IDENTICAL_TS:
             img_list.extend ([
                 ('REDUNDANT_A.bin', [
-                    ('UCODE.bin'    ,  ''        , self.UCODE_SIZE,    STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, STITCH_OPS.MODE_FILE_PAD | fwu_flag,  STITCH_OPS.MODE_POS_TAIL),
                     ('CFGDATA.bin'  , ''         , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD | cfg_flag, STITCH_OPS.MODE_POS_TAIL),
-                    ('KEYHASH.bin'  , ''         , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
                 ('REDUNDANT_B.bin', [
-                    ('UCODE.bin'    ,  ''        , self.UCODE_SIZE,    STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, STITCH_OPS.MODE_FILE_PAD | fwu_flag,  STITCH_OPS.MODE_POS_TAIL),
                     ('CFGDATA.bin'  , ''         , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD | cfg_flag, STITCH_OPS.MODE_POS_TAIL),
-                    ('KEYHASH.bin'  , ''         , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
                 ('TOP_SWAP_A.bin', [
                     ('STAGE1B_A.fd' ,  ''        , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('UCODE.bin'    ,  ''        , self.UCODE_SIZE,    STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('ACM.bin',         '',     self.ACM_SIZE,      STITCH_OPS.MODE_FILE_NOP | acm_flag,  STITCH_OPS.MODE_POS_TAIL),
+                    ('KEYHASH.bin'  , ''         , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('DIAGNOSTICACM.bin',        '',     self.DIAGNOSTICACM_SIZE,     STITCH_OPS.MODE_FILE_NOP | diagnosticacm_flag, STITCH_OPS.MODE_POS_TAIL),
                     ('STAGE1A_A.fd',    '',     self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP,             STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
                 ('TOP_SWAP_B.bin', [
                     ('STAGE1B_B.fd' ,  ''        , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                    ('UCODE.bin'    ,  ''        , self.UCODE_SIZE,    STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('ACM.bin',         '',     self.ACM_SIZE,      STITCH_OPS.MODE_FILE_NOP | acm_flag,  STITCH_OPS.MODE_POS_TAIL),
+                    ('KEYHASH.bin'  , ''         , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
                     ('DIAGNOSTICACM.bin',        '',     self.DIAGNOSTICACM_SIZE,     STITCH_OPS.MODE_FILE_NOP | diagnosticacm_flag, STITCH_OPS.MODE_POS_TAIL),
                     ('STAGE1A_B.fd',    '',     self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP,             STITCH_OPS.MODE_POS_TAIL),
                     ]
