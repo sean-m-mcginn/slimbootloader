@@ -132,6 +132,14 @@ class Board(BaseBoard):
             self.NON_VOLATILE_SIZE  = 0x001000
             self.NON_REDUNDANT_SIZE = 0x2DF000
 
+        self.BUILD_IDENTICAL_TS = 1
+
+        if not self._REDUNDANT_LAYOUT:
+            self.BUILD_IDENTICAL_TS = 0
+
+        if self.BUILD_IDENTICAL_TS:
+            self.TOP_SWAP_SIZE += self.STAGE1B_SIZE
+            self.REDUNDANT_SIZE -= self.STAGE1B_SIZE
 
         self.SLIMBOOTLOADER_SIZE = (self.TOP_SWAP_SIZE + self.REDUNDANT_SIZE) * 2 + \
             self.NON_REDUNDANT_SIZE + self.NON_VOLATILE_SIZE
@@ -308,46 +316,89 @@ class Board(BaseBoard):
                     ('STAGE1A.fd'   ,  ''        , self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
-                ])
+            ])
         else:
             img_list.extend ([
                 ('NON_VOLATILE.bin', [
                     ('SBLRSVD.bin',    ''        , self.SBLRSVD_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
                     ]
                 ),
-                ('NON_REDUNDANT.bin', [
-                    ('VARIABLE.bin' ,  ''        , self.VARIABLE_SIZE, STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
-                    ('PAYLOAD.bin'  ,  'Lzma'    , self.PAYLOAD_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('EPAYLOAD.bin' ,  ''        , self.EPAYLOAD_SIZE, STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('SIIPFW.bin'   ,  ''        , self.SIIPFW_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('PTEST.bin'    ,  ''        , self.TEST_SIZE,     STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('SETP.bin'     ,  ''        , self.SETUP_SIZE,    setup_mode,               STITCH_OPS.MODE_POS_TAIL),
-                    ]
-                ),
-                ('REDUNDANT_A.bin', [
-                    ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('STAGE1B_A.fd' ,  compress  , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, fwu_mode,                 STITCH_OPS.MODE_POS_TAIL),
-                    ('CFGDATA.bin'  ,  ''        , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('KEYHASH.bin'  ,  ''        , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ]
-                ),
-                ('REDUNDANT_B.bin', [
-                    ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('STAGE1B_B.fd' ,  compress  , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, fwu_mode,                 STITCH_OPS.MODE_POS_TAIL),
-                    ('CFGDATA.bin'  , ''         , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ('KEYHASH.bin'  ,  ''        , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
-                    ]
-                ),
-                ('TOP_SWAP_A.bin', [
-                    ('STAGE1A_A.fd'      , ''      , self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
-                    ]
-                ),
-                ('TOP_SWAP_B.bin', [
-                    ('STAGE1A_B.fd'      , ''      , self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
-                    ]
-                ),
+            ])
+
+            if self.BUILD_IDENTICAL_TS:
+                img_list.extend ([
+                    ('NON_REDUNDANT.bin', [
+                        ('VARIABLE.bin' ,  ''        , self.VARIABLE_SIZE, STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
+                        ('PAYLOAD.bin'  ,  'Lzma'    , self.PAYLOAD_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('EPAYLOAD.bin' ,  ''        , self.EPAYLOAD_SIZE, STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('SIIPFW.bin'   ,  ''        , self.SIIPFW_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('PTEST.bin'    ,  ''        , self.TEST_SIZE,     STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('SETP.bin'     ,  ''        , self.SETUP_SIZE,    setup_mode,               STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('REDUNDANT_A.bin', [
+                        ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, fwu_mode,                 STITCH_OPS.MODE_POS_TAIL),
+                        ('CFGDATA.bin'  ,  ''        , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('KEYHASH.bin'  ,  ''        , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('REDUNDANT_B.bin', [
+                        ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, fwu_mode,                 STITCH_OPS.MODE_POS_TAIL),
+                        ('CFGDATA.bin'  , ''         , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('KEYHASH.bin'  ,  ''        , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('TOP_SWAP_A.bin', [
+                        ('STAGE1B_A.fd' ,  compress  , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('STAGE1A_A.fd' , ''         , self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('TOP_SWAP_B.bin', [
+                        ('STAGE1B_B.fd' ,  compress  , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('STAGE1A_B.fd' ,  ''        , self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                ])
+            else:
+                img_list.extend ([
+                    ('NON_REDUNDANT.bin', [
+                        ('VARIABLE.bin' ,  ''        , self.VARIABLE_SIZE, STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
+                        ('PAYLOAD.bin'  ,  'Lzma'    , self.PAYLOAD_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('EPAYLOAD.bin' ,  ''        , self.EPAYLOAD_SIZE, STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('SIIPFW.bin'   ,  ''        , self.SIIPFW_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('PTEST.bin'    ,  ''        , self.TEST_SIZE,     STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('SETP.bin'     ,  ''        , self.SETUP_SIZE,    setup_mode,               STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('REDUNDANT_A.bin', [
+                        ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('STAGE1B_A.fd' ,  compress  , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, fwu_mode,                 STITCH_OPS.MODE_POS_TAIL),
+                        ('CFGDATA.bin'  ,  ''        , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('KEYHASH.bin'  ,  ''        , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('REDUNDANT_B.bin', [
+                        ('STAGE2.fd'    ,  'Lz4'     , self.STAGE2_SIZE,   STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('STAGE1B_B.fd' ,  compress  , self.STAGE1B_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('FWUPDATE.bin' ,  'Lzma'    , self.FWUPDATE_SIZE, fwu_mode,                 STITCH_OPS.MODE_POS_TAIL),
+                        ('CFGDATA.bin'  , ''         , self.CFGDATA_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ('KEYHASH.bin'  ,  ''        , self.KEYHASH_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('TOP_SWAP_A.bin', [
+                        ('STAGE1A_A.fd'      , ''      , self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                    ('TOP_SWAP_B.bin', [
+                        ('STAGE1A_B.fd'      , ''      , self.STAGE1A_SIZE,  STITCH_OPS.MODE_FILE_NOP, STITCH_OPS.MODE_POS_TAIL),
+                        ]
+                    ),
+                ])
+
+            img_list.extend ([
                 ('SlimBootloader.bin', [
                     ('NON_VOLATILE.bin'  , '' , self.NON_VOLATILE_SIZE,  STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
                     ('NON_REDUNDANT.bin' , '' , self.NON_REDUNDANT_SIZE, STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
@@ -357,6 +408,6 @@ class Board(BaseBoard):
                     ('TOP_SWAP_A.bin'    , '' , self.TOP_SWAP_SIZE,      STITCH_OPS.MODE_FILE_PAD, STITCH_OPS.MODE_POS_HEAD),
                     ]
                 ),
-                ])
+            ])
 
         return img_list
