@@ -9,7 +9,7 @@
 #include <Library/BaseLib.h>
 #include <Library/IoLib.h>
 #include <Library/PciLib.h>
-#include <CpuRegsAccess.h>
+#include <Library/TcoTimerLib.h>
 
 /**
   Enables the execution by writing to the MSR.
@@ -32,5 +32,5 @@ DisableWatchDogTimer (
   VOID
 )
 {
-
+  InitTcoTimer ();
 }

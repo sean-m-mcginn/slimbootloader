@@ -362,7 +362,7 @@ SecStartup2 (
 
   // Extra initialization
   if (FlashMap != NULL) {
-    if (PcdGetBool (PcdSblResiliencyEnabled)) {
+    if (PcdGetBool (PcdIdenticalTopSwapsBuilt)) {
       Status = GetBootPartition (&Partition);
       if (EFI_ERROR (Status)) {
         CpuHalt ("Boot partition retrieval failed!\n");

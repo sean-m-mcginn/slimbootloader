@@ -167,6 +167,9 @@
   # The number of 0.6s ticks to wait before assuming boot failure and forcing a reboot
   gPlatformModuleTokenSpaceGuid.PcdTcoTimeout             |  20        | UINT16  | 0x200000F5
 
+  # If top swap regions looks exactly the same
+  gPlatformModuleTokenSpaceGuid.PcdIdenticalTopSwapsBuilt |  FALSE     | BOOLEAN | 0x200000F6
+
 
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   #

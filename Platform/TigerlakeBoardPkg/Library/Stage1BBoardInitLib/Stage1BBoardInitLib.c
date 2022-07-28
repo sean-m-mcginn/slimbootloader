@@ -558,9 +558,6 @@ UpdateFspConfig (
 BOOLEAN
 IsFirmwareUpdate ()
 {
-  BOOT_PARTITION  Partition;
-  EFI_STATUS      Status;
-
   //
   // Check if state machine is set to capsule processing mode.
   //
@@ -576,10 +573,9 @@ IsFirmwareUpdate ()
   }
 
   //
-  // Check if top swap bit is set (signifies recovery if it gets here)
+  // Check if failed boot count exceeds threshold
   //
-  Status = GetBootPartition (&Partition);
-  if (!EFI_ERROR(Status) && Partition == BackupPartition) {
+  if (PcdGetBool (PcdSblResiliencyEnabled) && GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
     return TRUE;
   }
 

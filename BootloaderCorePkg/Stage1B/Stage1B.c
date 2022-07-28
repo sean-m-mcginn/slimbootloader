@@ -331,7 +331,7 @@ HandleBootFailures (
       if (EFI_ERROR (Status)) {
         return;
       }
-      ResetSystem (EfiResetCold);
+      ResetSystem (EfiResetWarm);
     }
   }
 }

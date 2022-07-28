@@ -90,6 +90,7 @@
   gPlatformCommonLibTokenSpaceGuid.PcdCompSignHashAlg
   gPlatformModuleTokenSpaceGuid.PcdSblResiliencyEnabled
   gPlatformModuleTokenSpaceGuid.PcdTcoTimeout
+  gPlatformModuleTokenSpaceGuid.PcdIdenticalTopSwapsBuilt
 
 [Depex]
   TRUE
