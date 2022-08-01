@@ -54,7 +54,7 @@ def get_bpmgen2_params_change_list ():
       ('AcmRevocation',         '2'),
       ('NEMPages',              '3'),
       ('AcpiBase',              '0x1800'),
-      ('IbbFlags',              '0x2'),
+      ('IbbFlags',              '0x12'),
       ('IbbHashAlgID',          '0x0C:SHA384'),
       ('TxtInclude',            'FALSE'),
       ('PcdInclude',            'TRUE'),
@@ -168,6 +168,7 @@ def get_xml_change_list (platform, plt_params_list):
         ('./FlexIO/Type-CSubsystemConfiguration/PhyBinaryFile',                      '$SourceDir\PhyBinaryFile.bin'),
         ('./FlexIO/Type-CSubsystemConfiguration/TbtBinaryFile',                      '$SourceDir\TbtBinaryFile.bin'),
         ('./FlashSettings/BiosConfiguration/TopSwapOverride',                        '2MB'),
+        ('./FlashSettings/BiosConfiguration/BiosRedAssistance',                      'Enabled'),
         ('./IntelMeKernel/IntelMeMeasuredBootConfiguration/MeMeasuredBootState',     'Disabled'),
     ])
 

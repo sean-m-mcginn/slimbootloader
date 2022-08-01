@@ -40,6 +40,8 @@
 #define R_CPU_ACM_POLICY_STATUS                                       0x378
 #define MMIO_ACM_POLICY_STATUS                                        (TXT_PUBLIC_BASE + R_CPU_ACM_POLICY_STATUS)
 
+#define R_ME_HFS_1                                                    0x58
+#define R_ME_HFS_2                                                    0x5C
 #define R_ME_HFS_3                                                    0x60
 #define R_ME_HFS_4                                                    0x64
 #define R_ME_HFS_5                                                    0x68

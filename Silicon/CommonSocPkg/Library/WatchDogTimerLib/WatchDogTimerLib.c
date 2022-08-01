@@ -287,7 +287,7 @@ IncrementFailedBootCount (
   ReadBack = WdtGetScratchpad (BOOT_COUNT_MASK);
 
   // Increment counter
-  ReadBack += (1 << 18);
+  ReadBack += BIT18;
 
   // Set bits
   WdtSetScratchpad ((ReadBack & BOOT_COUNT_MASK));
@@ -309,4 +309,29 @@ ClearFailedBootCount (
   )
 {
   WdtClearScratchpad (BOOT_COUNT_MASK);
+}
+
+/**
+  Set the failed boot count to max.
+**/
+VOID
+EFIAPI
+SetMaxFailedBootCount (
+  VOID
+  )
+{
+  // Set all bits.
+  WdtSetScratchpad (BOOT_COUNT_MASK);
+}
+
+/**
+  Returns if update is initiated.
+**/
+BOOLEAN
+EFIAPI
+IsUpdateTriggered (
+  VOID
+  )
+{
+  return (BOOLEAN)WdtGetScratchpad (BIT16);
 }

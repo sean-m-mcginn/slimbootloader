@@ -62,6 +62,7 @@ GetBootGuardInfo (
   )
 {
   UINT32                  MsrValue;
+  UINT32                  MeFwSts;
   UINT32                  MeFwSts4;
   UINT32                  BootGuardAcmStatus;
   UINT64                  BootGuardBootStatus;
@@ -81,8 +82,23 @@ GetBootGuardInfo (
     ///
     /// Read ME FWS Registers
     ///
+    MeFwSts = MmioRead32 (HeciBaseAddress + R_ME_HFS_1);
+    DEBUG ((DEBUG_INFO, "ME FW STS 1 = %x\n", MeFwSts));
+
+    MeFwSts = MmioRead32 (HeciBaseAddress + R_ME_HFS_2);
+    DEBUG ((DEBUG_INFO, "ME FW STS 2 = %x\n", MeFwSts));
+
+    MeFwSts = MmioRead32 (HeciBaseAddress + R_ME_HFS_3);
+    DEBUG ((DEBUG_INFO, "ME FW STS 3 = %x\n", MeFwSts));
+
     MeFwSts4 = MmioRead32 (HeciBaseAddress + R_ME_HFS_4);
     DEBUG ((DEBUG_INFO, "ME FW STS 4 = %x\n", MeFwSts4));
+
+    MeFwSts = MmioRead32 (HeciBaseAddress + R_ME_HFS_5);
+    DEBUG ((DEBUG_INFO, "ME FW STS 5 = %x\n", MeFwSts));
+
+    MeFwSts = MmioRead32 (HeciBaseAddress + R_ME_HFS_6);
+    DEBUG ((DEBUG_INFO, "ME FW STS 6 = %x\n", MeFwSts));
 
     ///
     /// Check Bit 12 in ME FWSTS4 to check if TPM_DISCONNECT_ALL bit is set

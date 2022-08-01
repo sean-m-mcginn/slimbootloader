@@ -161,4 +161,22 @@ ClearFailedBootCount (
   VOID
   );
 
+/**
+  Set the failed boot count to max.
+**/
+VOID
+EFIAPI
+SetMaxFailedBootCount (
+  VOID
+  );
+
+/**
+  Returns if update is initiated.
+**/
+BOOLEAN
+EFIAPI
+IsUpdateTriggered (
+  VOID
+  );
+
 #endif

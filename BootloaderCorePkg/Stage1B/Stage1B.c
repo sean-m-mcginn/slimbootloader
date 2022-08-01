@@ -337,6 +337,17 @@ HandleBootFailures (
 }
 
 /**
+  Indicate recovery in WDT register.
+**/
+VOID
+TriggerRecovery (
+  VOID
+  )
+{
+  SetMaxFailedBootCount ();
+}
+
+/**
   Update recovery-related data and react appropriately.
 **/
 VOID
@@ -452,6 +463,12 @@ SecStartup2 (
   BoardInit (PostConfigInit);
 
   if (PcdGetBool (PcdSblResiliencyEnabled)) {
+    if (GetCurrentBootPartition () == BackupPartition && !IsUpdateTriggered ()) {
+      TriggerRecovery ();
+    }
+    if (GetFailedBootCount () >= PcdGet8 (PcdBootFailureThreshold)) {
+      SetBootMode (BOOT_ON_FLASH_UPDATE);
+    }
     HandleRecovery ();
   }
 
