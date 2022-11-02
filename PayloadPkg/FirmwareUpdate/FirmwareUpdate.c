@@ -156,6 +156,223 @@ VerifySblVersion (
 }
 
 /**
+  Verify the versions in a single uCode patch
+
+  @param[in] ImageHdr     Pointer to the uCode header
+
+  @retval  EFI_SUCCESS    Version check passes.
+  @retval  others         Version check fails.
+**/
+EFI_STATUS
+VerifyMicrocodeVersion (
+  IN  CPU_MICROCODE_HEADER  *MicrocodeHdr
+  ) 
+{
+  UINT32                                  ProcessorSignature;
+  UINT32                                  ProcessorFlags;
+  UINT32                                  ProcessorMicrocodeRevision;
+  UINTN                                   TotalSize;
+  UINTN                                   DataSize;
+  UINT32                                  CheckSum32;
+  UINT32                                  IncompleteCheckSum32;
+  BOOLEAN                                 CorrectMicrocode;
+  UINTN                                   ExtendedTableSize;
+  UINT32                                  ExtendedTableNumEntries;
+  UINT32                                  Index;
+  CPU_MICROCODE_EXTENDED_TABLE_HEADER     *ExtendedTableHeader;
+  CPU_MICROCODE_EXTENDED_TABLE            *ExtendedTableEntry;
+
+  ProcessorSignature = GetCurrentProcessorSignature();
+  ProcessorFlags = GetCurrentProcessorFlags();
+  ProcessorMicrocodeRevision = GetCurrentMicrocodeSignature();
+
+  //
+  // Check HeaderVersion
+  //
+  if (MicrocodeHdr->HeaderVersion != 0x1) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on HeaderVersion\n"));
+    return EFI_INCOMPATIBLE_VERSION;
+  }
+
+  //
+  // Check LoaderRevision
+  //
+  if (MicrocodeHdr->LoaderRevision != 0x1) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on LoaderRevision\n"));
+    return EFI_INCOMPATIBLE_VERSION;
+  }
+
+  //
+  // Check TotalSize
+  //
+  if (MicrocodeHdr->DataSize == 0) {
+    TotalSize = 2048;
+  } else {
+    TotalSize = MicrocodeHdr->TotalSize;
+  }
+  if (TotalSize <= sizeof(CPU_MICROCODE_HEADER)) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - TotalSize too small\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+  if ((TotalSize & (SIZE_1KB - 1)) != 0) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - TotalSize not multiples of 1024 bytes (1 KB)\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+  if (TotalSize > PcdGet32(PcdUcodeSlotSize)) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - TotalSize bigger than slot size\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+  
+  //
+  // Check DataSize
+  //
+  if (MicrocodeHdr->DataSize == 0) {
+    DataSize = 2048 - sizeof(CPU_MICROCODE_HEADER);
+  } else {
+    DataSize = MicrocodeHdr->DataSize;
+  }
+  if (DataSize > TotalSize - sizeof(CPU_MICROCODE_HEADER)) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - DataSize too big\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+  if ((DataSize & 0x3) != 0) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - DataSize not multiple of DWORDs\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+  
+  //
+  // Check CheckSum32 for uCode header and data
+  //
+  CheckSum32 = CalculateSum32 ((UINT32 *)MicrocodeHdr, DataSize + sizeof(CPU_MICROCODE_HEADER));
+  if (CheckSum32 != 0) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on CheckSum32 for uCode header and data\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  //
+  // Check UpdateRevision 
+  //
+  if ((ProcessorMicrocodeRevision != (UINT32)-1) && (MicrocodeHdr->UpdateRevision < ProcessorMicrocodeRevision)) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on UpdateRevision\n"));
+    return EFI_INCOMPATIBLE_VERSION;
+  }
+
+  //
+  // If MicrocodeHdr matches processor already, no need to check uCode extended table
+  //
+  if (ProcessorSignature == MicrocodeHdr->ProcessorSignature.Uint32 &&
+      (ProcessorFlags & MicrocodeHdr->ProcessorFlags) != 0) {
+    DEBUG ((DEBUG_INFO, "VerifyMicrocodeVersion - patch verified by uCode header\n"));
+    return EFI_SUCCESS;
+  }
+
+  //
+  // Check for uCode extended table
+  //
+  ExtendedTableSize = TotalSize - (DataSize + sizeof(CPU_MICROCODE_HEADER));
+  if (ExtendedTableSize == 0) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on current ProcessorSignature and ProcessorFlags, uCode extended table does not exist\n"));
+    return EFI_UNSUPPORTED;
+  }
+  ExtendedTableHeader = (CPU_MICROCODE_EXTENDED_TABLE_HEADER *)((UINTN)MicrocodeHdr + DataSize + sizeof(CPU_MICROCODE_HEADER));
+  if ((ExtendedTableSize <= sizeof(CPU_MICROCODE_EXTENDED_TABLE_HEADER))) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - ExtendedTableSize too small\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+  if ((ExtendedTableSize & 0x3) != 0) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - ExtendedTableSize not multiple of DWORDs\n"));
+    return EFI_VOLUME_CORRUPTED;
+  }
+  ExtendedTableNumEntries = ExtendedTableHeader->ExtendedSignatureCount;
+  if (ExtendedTableNumEntries > (ExtendedTableSize - sizeof(CPU_MICROCODE_EXTENDED_TABLE_HEADER)) / sizeof(CPU_MICROCODE_EXTENDED_TABLE)) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - ExtendedTableNumEntries too big\n"));
+    return EFI_VOLUME_CORRUPTED; 
+  } 
+
+  //
+  // Check Checksum for uCode extended table
+  //
+  IncompleteCheckSum32 = CheckSum32;
+  IncompleteCheckSum32 -= MicrocodeHdr->ProcessorSignature.Uint32;
+  IncompleteCheckSum32 -= MicrocodeHdr->ProcessorFlags;
+  IncompleteCheckSum32 -= MicrocodeHdr->Checksum;
+  CheckSum32 = CalculateSum32((UINT32 *)ExtendedTableHeader, ExtendedTableSize);
+  if (CheckSum32 != 0) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on CheckSum32 for uCode extended table\n"));
+    return EFI_VOLUME_CORRUPTED; 
+  }
+  
+  CorrectMicrocode = FALSE;
+  ExtendedTableEntry = (CPU_MICROCODE_EXTENDED_TABLE *)((UINTN)ExtendedTableHeader + sizeof(CPU_MICROCODE_EXTENDED_TABLE_HEADER));
+  for (Index = 0; Index < ExtendedTableNumEntries; Index++) {
+    //
+    // Check Checksum for uCode extended table entry
+    //
+    CheckSum32 = IncompleteCheckSum32;
+    CheckSum32 += ExtendedTableEntry->ProcessorSignature.Uint32;
+    CheckSum32 += ExtendedTableEntry->ProcessorFlag;
+    CheckSum32 += ExtendedTableEntry->Checksum;
+    if (CheckSum32 != 0) {
+        DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on CheckSum32 for uCode extended table entry\n"));
+        return EFI_VOLUME_CORRUPTED; 
+    } 
+
+    //
+    // Check if ExtendedTableEntry matches processor
+    //
+    if (ProcessorSignature == ExtendedTableEntry->ProcessorSignature.Uint32 &&
+        (ProcessorFlags & ExtendedTableEntry->ProcessorFlag) != 0) {
+      CorrectMicrocode = TRUE;
+      break;
+    }
+    ExtendedTableEntry++;
+  }
+
+  if (!CorrectMicrocode) {
+    DEBUG ((DEBUG_ERROR, "VerifyMicrocodeVersion - fail on current ProcessorSignature and ProcessorFlags, uCode extended table used\n"));
+    return EFI_UNSUPPORTED;
+  }
+
+  DEBUG ((DEBUG_INFO, "VerifyMicrocodeVersion - patch verified by uCode extented table entry\n"));
+  return EFI_SUCCESS;
+}
+
+/**
+  Verify the versions in each of the uCode patches within the capsule image
+
+  @param[in] ImageHdr     Pointer to the capsule image header
+
+  @retval  EFI_SUCCESS    Version checks pass.
+  @retval  others         Version checks fail.
+**/
+EFI_STATUS
+VerifyMicrocodeVersions (
+  IN  EFI_FW_MGMT_CAP_IMAGE_HEADER  *ImageHdr
+  )
+{
+  EFI_STATUS            Status;
+  UINTN                 ImageBase;
+  UINTN                 ImageOffset;
+  UINT8                 *ImageByte;
+
+  ImageBase = (UINTN)ImageHdr + sizeof(EFI_FW_MGMT_CAP_IMAGE_HEADER);
+  ImageOffset = 0;
+
+  // Validate each patch in uCode update image
+  ImageByte = (UINT8*)(ImageBase + ImageOffset);
+  while (*ImageByte != PAD_BYTE && ImageOffset < ImageHdr->UpdateImageSize) {
+    Status = VerifyMicrocodeVersion ((CPU_MICROCODE_HEADER *)ImageByte);
+    if(EFI_ERROR (Status)) {
+      return Status;
+    }
+    ImageOffset += PcdGet32(PcdUcodeSlotSize);
+    ImageByte = (UINT8*)(ImageBase + ImageOffset);
+  }
+
+  return EFI_SUCCESS;
+} 
+
+/**
   Verify the firmware version to make sure it is no less than current firmware version.
 
   @param[in] ImageHdr     Pointer to the fw mgmt capsule image header
@@ -201,11 +418,12 @@ VerifyFwVersion (
   }
 
   //
-  // Allow all UCOD Updates
+  // Check uCode versions
   //
   if (((UINT32)ImageHdr->UpdateHardwareInstance) == FLASH_MAP_SIG_UCODE) {
     DEBUG((DEBUG_INFO, "Capsule update is for UCODE region!!\n"));
-    return EFI_SUCCESS;
+    Status = VerifyMicrocodeVersions (ImageHdr);
+    return Status;
   }
 
   if ((UINT32)ImageHdr->UpdateHardwareInstance == FW_UPDATE_COMP_BIOS_REGION) {

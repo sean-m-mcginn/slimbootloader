@@ -24,6 +24,7 @@
 #include "FirmwareUpdateHelper.h"
 #include <Service/SpiFlashService.h>
 #include <Library/BootGuardLib.h>
+#include <Register/Intel/ArchitecturalMsr.h>
 
 SPI_FLASH_SERVICE   *mFwuSpiService = NULL;
 
@@ -1244,3 +1245,54 @@ VerifyFwStruct (
 
   return EFI_SUCCESS;
 }
+
+/**
+  Get microcode update signature of loaded microcode update.
+
+  @return  microcode signature.
+**/
+UINT32
+GetCurrentMicrocodeSignature (
+  VOID
+  )
+{
+  MSR_IA32_BIOS_SIGN_ID_REGISTER  MsrSignId;
+
+  AsmWriteMsr64 (MSR_IA32_BIOS_SIGN_ID, 0);
+  AsmCpuid (CPUID_VERSION_INFO, NULL, NULL, NULL, NULL);
+  MsrSignId.Uint64 = AsmReadMsr64 (MSR_IA32_BIOS_SIGN_ID);
+  return MsrSignId.Bits.MicrocodeUpdateSignature;
+}
+
+/**
+  Get current processor signature.
+
+  @return current processor signature.
+**/
+UINT32
+GetCurrentProcessorSignature (
+  VOID
+  )
+{
+  UINT32  RegEax;
+
+  AsmCpuid(CPUID_VERSION_INFO, &RegEax, NULL, NULL, NULL);
+  return RegEax;
+}
+
+/**
+  Get current processor flags.
+
+  @return current processor flags.
+**/
+UINT8
+GetCurrentProcessorFlags (
+  VOID
+  )
+{
+  UINT8 PlatformId;
+
+  PlatformId = (UINT8)AsmMsrBitFieldRead64(MSR_IA32_PLATFORM_ID, 50, 52);
+  return 1 << PlatformId;
+}
+

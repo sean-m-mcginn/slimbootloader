@@ -12,23 +12,57 @@
 #include <Uefi/UefiBaseType.h>
 #include <Library/ResetSystemLib.h>
 
-///
-/// Structure to describe microcode header
-///
+typedef union {
+  struct {
+    UINT32    Year  : 16;
+    UINT32    Day   : 8;
+    UINT32    Month : 8;
+  } Bits;
+  UINT32    Uint32;
+} CPU_MICROCODE_DATE;
+
+typedef union {
+  struct {
+    UINT32   Stepping:4;
+    UINT32   Model:4;
+    UINT32   Family:4;
+    UINT32   Type:2;
+    UINT32   Reserved1:2;
+    UINT32   ExtendedModel:4;
+    UINT32   ExtendedFamily:8;
+    UINT32   Reserved2:4;
+  } Bits;
+  UINT32     Uint32;
+} CPU_MICROCODE_PROCESSOR_SIGNATURE;
+
 typedef struct {
-  UINT32 HeaderVersion;  ///< Version number of the update header.
-  UINT32 UpdateRevision; ///< Unique version number for the update.
-  UINT32 Date;           ///< Date of the update creation.
-  UINT32 ProcessorId;    ///< Signature of the processor that requires this update.
-  UINT32 Checksum;       ///< Checksum of update data and header.
-  UINT32 LoaderRevision; ///< Version number of the microcode loader program.
-  UINT32 ProcessorFlags; ///< Lower 4 bits denoting platform type information.
-  UINT32 DataSize;       ///< Size of encoded data in bytes.
-  UINT32 TotalSize;      ///< Total size of microcode update in bytes.
-  UINT8  Reserved[12];   ///< Reserved bits.
+  UINT32    HeaderVersion;
+  UINT32                UpdateRevision;
+  CPU_MICROCODE_DATE    Date;
+  CPU_MICROCODE_PROCESSOR_SIGNATURE    ProcessorSignature;
+  UINT32                               Checksum;
+  UINT32                               LoaderRevision;
+  UINT32    ProcessorFlags;
+  UINT32    DataSize;
+  UINT32    TotalSize;
+  UINT8     Reserved[12];
 } CPU_MICROCODE_HEADER;
 
-#define PAD_BYTE  0xFF
+typedef struct {
+  UINT32    ExtendedSignatureCount;
+  UINT32    ExtendedChecksum;
+  UINT8     Reserved[12];
+} CPU_MICROCODE_EXTENDED_TABLE_HEADER;
+
+typedef struct {
+  CPU_MICROCODE_PROCESSOR_SIGNATURE  ProcessorSignature;
+  UINT32                             ProcessorFlag;
+  UINT32                             Checksum;
+} CPU_MICROCODE_EXTENDED_TABLE;
+
+#define CPUID_VERSION_INFO                      0x01
+
+#define PAD_BYTE                                0xFF
 
 /**
   Update a region block.
@@ -349,6 +383,36 @@ GetRomImageOffsetInBiosRegion (
 BOOLEAN
 IsRedundantComponent (
   IN  UINT64    Signature
+  );
+
+/**
+  Get microcode update signature of loaded microcode update.
+
+  @return  microcode signature.
+**/
+UINT32
+GetCurrentMicrocodeSignature (
+  VOID
+  );
+
+/**
+  Get current processor signature.
+
+  @return current processor signature.
+**/
+UINT32
+GetCurrentProcessorSignature (
+  VOID
+  );
+
+/**
+  Get current processor flags.
+
+  @return current processor flags.
+**/
+UINT8
+GetCurrentProcessorFlags (
+  VOID
   );
 
 #endif
