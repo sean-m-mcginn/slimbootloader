@@ -225,7 +225,7 @@ class Board(BaseBoard):
         self._generated_cfg_file_prefix = 'Autogen_'
 
         self._CFGDATA_INT_FILE = []
-        self._CFGDATA_EXT_FILE = [self._generated_cfg_file_prefix + 'CfgDataInt_Rpls_Rvp_Ddr5.dlt', self._generated_cfg_file_prefix + 'CfgDataInt_Rpls_Rvp_SODdr5.dlt']
+        self._CFGDATA_EXT_FILE = [self._generated_cfg_file_prefix + 'CfgDataInt_Rpls_Rvp_Ddr5.dlt', self._generated_cfg_file_prefix + 'CfgDataInt_Rpls_Rvp_SODdr5.dlt', self._generated_cfg_file_prefix + 'CfgDataInt_Rpls_Crb_Ddr4.dlt']
 
     def PlatformBuildHook (self, build, phase):
         if phase == 'pre-build:before':
