@@ -1,0 +1,15 @@
+## @file  BootloaderFuzzPkg.dec
+#
+# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = BootloaderFuzzPkg
+  PACKAGE_GUID                   = C180BCA2-2EE2-460C-9C91-F8F0C46053DB
+  PACKAGE_VERSION                = 0.1
+
+[Includes.common]
+  TestStub/Include
