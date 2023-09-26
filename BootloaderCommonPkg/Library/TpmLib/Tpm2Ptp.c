@@ -551,52 +551,52 @@ DumpPtpInfo (
   DEBUG ((DEBUG_INFO, "RID - 0x%02x\n", Rid));
 }
 
-// /**
-//   This service enables the sending of commands to the TPM2.
+/**
+  This service enables the sending of commands to the TPM2.
 
-//   @param[in]      InputParameterBlockSize  Size of the TPM2 input parameter block.
-//   @param[in]      InputParameterBlock      Pointer to the TPM2 input parameter block.
-//   @param[in,out]  OutputParameterBlockSize Size of the TPM2 output parameter block.
-//   @param[in]      OutputParameterBlock     Pointer to the TPM2 output parameter block.
+  @param[in]      InputParameterBlockSize  Size of the TPM2 input parameter block.
+  @param[in]      InputParameterBlock      Pointer to the TPM2 input parameter block.
+  @param[in,out]  OutputParameterBlockSize Size of the TPM2 output parameter block.
+  @param[in]      OutputParameterBlock     Pointer to the TPM2 output parameter block.
 
-//   @retval EFI_SUCCESS            The command byte stream was successfully sent to the device and a response was successfully received.
-//   @retval EFI_DEVICE_ERROR       The command was not successfully sent to the device or a response was not successfully received from the device.
-//   @retval EFI_BUFFER_TOO_SMALL   The output parameter block is too small.
-// **/
-// EFI_STATUS
-// EFIAPI
-// Tpm2SubmitCommand (
-//   IN UINT32            InputParameterBlockSize,
-//   IN UINT8             *InputParameterBlock,
-//   IN OUT UINT32        *OutputParameterBlockSize,
-//   IN UINT8             *OutputParameterBlock
-//   )
-// {
-//   PTP_INTERFACE_TYPE  PtpInterface;
+  @retval EFI_SUCCESS            The command byte stream was successfully sent to the device and a response was successfully received.
+  @retval EFI_DEVICE_ERROR       The command was not successfully sent to the device or a response was not successfully received from the device.
+  @retval EFI_BUFFER_TOO_SMALL   The output parameter block is too small.
+**/
+EFI_STATUS
+EFIAPI
+Tpm2SubmitCommand (
+  IN UINT32            InputParameterBlockSize,
+  IN UINT8             *InputParameterBlock,
+  IN OUT UINT32        *OutputParameterBlockSize,
+  IN UINT8             *OutputParameterBlock
+  )
+{
+  PTP_INTERFACE_TYPE  PtpInterface;
 
-//   PtpInterface = Tpm2GetPtpInterface ((VOID *) (UINTN) PcdGet64 (PcdTpmBaseAddress));
-//   switch (PtpInterface) {
-//   case PtpInterfaceCrb:
-//     return PtpCrbTpmCommand (
-//              (PTP_CRB_REGISTERS_PTR) (UINTN) PcdGet64 (PcdTpmBaseAddress),
-//              InputParameterBlock,
-//              InputParameterBlockSize,
-//              OutputParameterBlock,
-//              OutputParameterBlockSize
-//              );
-//   case PtpInterfaceFifo:
-//   case PtpInterfaceTis:
-//     return Tpm2TisTpmCommand (
-//              (TIS_PC_REGISTERS_PTR) (UINTN) PcdGet64 (PcdTpmBaseAddress),
-//              InputParameterBlock,
-//              InputParameterBlockSize,
-//              OutputParameterBlock,
-//              OutputParameterBlockSize
-//              );
-//   default:
-//     return EFI_NOT_FOUND;
-//   }
-// }
+  PtpInterface = Tpm2GetPtpInterface ((VOID *) (UINTN) PcdGet64 (PcdTpmBaseAddress));
+  switch (PtpInterface) {
+  case PtpInterfaceCrb:
+    return PtpCrbTpmCommand (
+             (PTP_CRB_REGISTERS_PTR) (UINTN) PcdGet64 (PcdTpmBaseAddress),
+             InputParameterBlock,
+             InputParameterBlockSize,
+             OutputParameterBlock,
+             OutputParameterBlockSize
+             );
+  case PtpInterfaceFifo:
+  case PtpInterfaceTis:
+    return Tpm2TisTpmCommand (
+             (TIS_PC_REGISTERS_PTR) (UINTN) PcdGet64 (PcdTpmBaseAddress),
+             InputParameterBlock,
+             InputParameterBlockSize,
+             OutputParameterBlock,
+             OutputParameterBlockSize
+             );
+  default:
+    return EFI_NOT_FOUND;
+  }
+}
 
 /**
   This service requests use TPM2.

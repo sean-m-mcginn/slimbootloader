@@ -88,7 +88,7 @@
   CryptoLib|BootloaderCommonPkg/Library/IppCryptoLib/IppCryptoLib.inf
   ShellExtensionLib|BootloaderCommonPkg/Library/ShellExtensionLibNull/ShellExtensionLibNull.inf
   DebugLogBufferLib|BootloaderCommonPkg/Library/DebugLogBufferLib/DebugLogBufferLib.inf
-  DebugLib|BootloaderCommonPkg/Library/BootloaderDebugLib/BootloaderDebugLib.inf
+  DebugLib|BootloaderCommonPkg/Library/DebugLibHost/DebugLibHost.inf
   ConsoleInLib|BootloaderCommonPkg/Library/ConsoleInLib/ConsoleInLib.inf
   ConsoleOutLib|BootloaderCommonPkg/Library/ConsoleOutLib/ConsoleOutLib.inf
   ContainerLib|BootloaderCommonPkg/Library/ContainerLib/ContainerLib.inf
@@ -116,9 +116,9 @@
 [LibraryClasses.common.USER_DEFINED]
 
 [Components]
-  BootloaderFuzzPkg/TestCase/BootloaderCommonPkg/TpmLib/TestTpmLib.inf {
+  BootloaderFuzzPkg/TestCase/BootloaderCommonPkg/TpmLib/TestTpm2Capability.inf {
     <LibraryClasses>
-      Tpm2DeviceLibStub|BootloaderFuzzPkg/TestStub/Tpm2DeviceLibStub/Tpm2DeviceLibStub.inf 
+      Tpm2PtpStub|BootloaderFuzzPkg/TestStub/TpmLibStub/Tpm2PtpStub.inf 
   }
 
 [PcdsDynamicDefault]

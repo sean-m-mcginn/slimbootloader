@@ -8,7 +8,7 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = TestTpmLib
+  BASE_NAME                      = TestTpm2Capability
   FILE_GUID                      = 9668F5E5-2EAA-4B87-9C1F-DF2CF64B9AEB
   MODULE_TYPE                    = USER_DEFINED
   VERSION_STRING                 = 1.0
@@ -20,7 +20,7 @@
 #
 
 [Sources]
-  TestTpmLib.c
+  TestTpm2Capability.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -29,7 +29,8 @@
 
 [LibraryClasses]
   TpmLib
-  Tpm2DeviceLibStub
+  Tpm2PtpStub
   IoLib
   BaseLib
   ToolChainHarnessLib
+  MemoryAllocationLib

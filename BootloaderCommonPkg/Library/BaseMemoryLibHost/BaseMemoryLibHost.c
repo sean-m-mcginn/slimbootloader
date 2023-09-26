@@ -215,12 +215,13 @@ IsZeroBuffer (
   IN UINTN       Length
   )
 {
-  if ((Buffer == NULL || Length <= 0))
+  if (Buffer == NULL && Length > 0)
   {
-  printf ("ASSERT: Buffer is null or length <=0\n");
+  printf ("ASSERT: Buffer is null and length > 0\n");
   CpuBreakpoint ();
   }
-  if ((Length - 1) > (MAX_ADDRESS - (UINTN)Buffer)){
+  if (Length > 0 && (Length - 1) > (MAX_ADDRESS - (UINTN)Buffer))
+  {
   printf ("ASSERT: Buffer address is out of Max Address limilation\n");
   CpuBreakpoint ();
   }

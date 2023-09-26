@@ -5,7 +5,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include <Library/Tpm2DeviceLibStub.h>
+#include <Library/Tpm2PtpStub.h>
 #include <IndustryStandard/Tpm20.h>
 #include <Library/BaseLib.h>
 #include <Library/TpmLib/Tpm2CommandLib.h>
@@ -39,8 +39,8 @@ TestTpm2GetCapabilitySupportedAndActivePcrs (
   VOID
   )
 {
-  UINT32                    TpmHashAlgorithmBitmap;
-  UINT32                    ActivePcrBanks;
+  UINT32                    TpmHashAlgorithmBitmap = 0;
+  UINT32                    ActivePcrBanks = 0;
 
   Tpm2GetCapabilitySupportedAndActivePcrs (&TpmHashAlgorithmBitmap, &ActivePcrBanks);
 }
