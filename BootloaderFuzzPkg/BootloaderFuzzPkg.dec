@@ -12,4 +12,4 @@
   PACKAGE_VERSION                = 0.1
 
 [Includes.common]
-  TestStub/Include
+  TestStub/BootloaderCommonPkg/Include

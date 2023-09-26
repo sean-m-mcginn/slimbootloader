@@ -25,6 +25,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  BootloaderFuzzPkg/BootloaderFuzzPkg.dec
   BootloaderCommonPkg/BootloaderCommonPkg.dec
 
 [LibraryClasses]
