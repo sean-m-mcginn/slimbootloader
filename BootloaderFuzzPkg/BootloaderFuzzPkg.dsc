@@ -46,7 +46,7 @@
   HobBuildLib|BootloaderCorePkg/Library/HobBuildLib/HobBuildLib.inf
   LiteFvLib|BootloaderCommonPkg/Library/LiteFvLib/LiteFvLib.inf
   LoaderPerformanceLib|BootloaderCommonPkg/Library/LoaderPerformanceLib/LoaderPerformanceLib.inf
-  MemoryAllocationLib|BootloaderFuzzPkg/TestCode/BootloaderCommonPkg/Library/MemoryAllocationLibHost/MemoryAllocationLibHost.inf
+  MemoryAllocationLib|UefiHostTestPkg/Library/MemoryAllocationLibHost/MemoryAllocationLibHost.inf
   MpInitLib|BootloaderCorePkg/Library/MpInitLib/MpInitLib.inf
   StageLib|BootloaderCorePkg/Library/StageLib/StageLib.inf
   LocalApicLib|BootloaderCommonPkg/Library/BaseXApicX2ApicLib/BaseXApicX2ApicLib.inf
@@ -88,7 +88,7 @@
   CryptoLib|BootloaderCommonPkg/Library/IppCryptoLib/IppCryptoLib.inf
   ShellExtensionLib|BootloaderCommonPkg/Library/ShellExtensionLibNull/ShellExtensionLibNull.inf
   DebugLogBufferLib|BootloaderCommonPkg/Library/DebugLogBufferLib/DebugLogBufferLib.inf
-  DebugLib|BootloaderFuzzPkg/TestCode/BootloaderCommonPkg/Library/DebugLibHost/DebugLibHost.inf
+  DebugLib|UefiHostTestPkg/Library/DebugLibHost/DebugLibHost.inf
   ConsoleInLib|BootloaderCommonPkg/Library/ConsoleInLib/ConsoleInLib.inf
   ConsoleOutLib|BootloaderCommonPkg/Library/ConsoleOutLib/ConsoleOutLib.inf
   ContainerLib|BootloaderCommonPkg/Library/ContainerLib/ContainerLib.inf
@@ -111,7 +111,7 @@
   CrashLogLib|Silicon/CommonSocPkg/Library/CrashLogLibNull/CrashLogLibNull.inf
   FusaConfigLib|Silicon/CommonSocPkg/Library/FusaConfigLibNull/FusaConfigLibNull.inf
   ToolChainHarnessLib|BootloaderFuzzPkg/TestCode/BootloaderCommonPkg/Library/ToolChainHarnessLib/ToolChainHarnessLib.inf
-  BaseMemoryLib|BootloaderFuzzPkg/TestCode/BootloaderCommonPkg/Library/BaseMemoryLibHost/BaseMemoryLibHost.inf
+  BaseMemoryLib|UefiHostTestPkg/Library/BaseMemoryLibHost/BaseMemoryLibHost.inf
 
 [LibraryClasses.common.USER_DEFINED]
 
@@ -125,4 +125,4 @@
 
 [PcdsFixedAtBuild]
 
-!include BootloaderFuzzPkg/UefiHostFuzzTestBuildOption.dsc
+!include UefiHostTestPkg/UefiHostFuzzTestBuildOption.dsc
