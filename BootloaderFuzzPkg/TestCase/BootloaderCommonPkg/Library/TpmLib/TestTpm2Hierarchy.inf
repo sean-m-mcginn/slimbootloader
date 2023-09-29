@@ -21,6 +21,8 @@
 
 [Sources]
   TestTpm2Hierarchy.c
+  BootloaderCommonPkg/Library/TpmLib/Tpm2Hierarchy.c
+  BootloaderCommonPkg/Library/TpmLib/Tpm2Help.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -31,7 +33,6 @@
 
 [LibraryClasses]
   Tpm2PtpStub
-  TpmLib
   DebugLib
   BaseLib
   MemoryAllocationLib

@@ -22,8 +22,8 @@
 [Sources]
   TpmEventLog.h
   TpmLibInternal.h
-  #TpmLib.c
-  #Tpm2Ptp.c
+  TpmLib.c
+  Tpm2Ptp.c
   Tpm2Tis.c
   Tpm2Startup.c
   Tpm2Integrity.c

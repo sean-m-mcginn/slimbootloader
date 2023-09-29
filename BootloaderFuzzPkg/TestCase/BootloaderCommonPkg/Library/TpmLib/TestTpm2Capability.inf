@@ -21,6 +21,7 @@
 
 [Sources]
   TestTpm2Capability.c
+  BootloaderCommonPkg/Library/TpmLib/Tpm2Capability.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -30,7 +31,6 @@
   UefiHostFuzzTestPkg/UefiHostFuzzTestPkg.dec
 
 [LibraryClasses]
-  TpmLib
   Tpm2PtpStub
   IoLib
   BaseLib
