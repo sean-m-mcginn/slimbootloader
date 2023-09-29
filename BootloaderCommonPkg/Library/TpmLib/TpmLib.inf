@@ -20,19 +20,19 @@
 #
 
 [Sources]
-  #TpmEventLog.h
+  TpmEventLog.h
   TpmLibInternal.h
   #TpmLib.c
   #Tpm2Ptp.c
-  #Tpm2Tis.c
-  #Tpm2Startup.c
-  #Tpm2Integrity.c
-  #Tpm2Hierarchy.c
+  Tpm2Tis.c
+  Tpm2Startup.c
+  Tpm2Integrity.c
+  Tpm2Hierarchy.c
   Tpm2Capability.c
-  #Tpm2Help.c
-  #TpmEventLog.c
+  Tpm2Help.c
+  TpmEventLog.c
   Tpm2CommandLib.h
-  #Tpm2DeviceLib.h
+  Tpm2DeviceLib.h
 
 [Packages]
   MdePkg/MdePkg.dec

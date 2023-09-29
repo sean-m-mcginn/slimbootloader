@@ -1,6 +1,6 @@
 ## @file
 #
-# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
@@ -22,9 +22,9 @@ from   ctypes import *
 #
 # Globals for help information
 #
-__prog__      = 'SeedGenTpm2Response'
+__prog__      = 'SeedGenTestTpm2Capability'
 __version__   = '%s Version %s' % (__prog__, '0.1 ')
-__copyright__ = 'Copyright (c) 2018, Intel Corporation. All rights reserved.'
+__copyright__ = 'Copyright (c) 2023, Intel Corporation. All rights reserved.'
 __usage__     = '%s [options] -o <output_file>' % (__prog__)
 
 TPM_ALG_SHA1           = 0x0004
@@ -101,18 +101,18 @@ if __name__ == '__main__':
 
   DummyBuf = create_string_buffer(sizeof(TPM2_GET_CAPABILITY_RESPONSE))
 
-  Tpm2GetCapabilityResponse = TPM2_GET_CAPABILITY_RESPONSE.from_buffer (DummyBuf, 0)
-  Tpm2GetCapabilityResponse.Header.tag = socket.ntohs (TPM_ST_SESSIONS)
-  Tpm2GetCapabilityResponse.Header.paramSize = socket.ntohl (0x54) # socket.ntohl (sizeof(TPM2_GET_CAPABILITY_RESPONSE) - 2)
-  Tpm2GetCapabilityResponse.Header.responseCode = socket.ntohl (TPM_RC_SUCCESS)
-  Tpm2GetCapabilityResponse.MoreData = socket.ntohl (0x0) # socket.ntohl (sizeof(TPM2_GET_CAPABILITY_RESPONSE) - 2)
-  Tpm2GetCapabilityResponse.CapabilityData.data.assignedPCR.count = 2
-  Tpm2GetCapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[0].hash = TPM_ALG_SHA256
-  memset(Tpm2GetCapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[0].pcrSelect, 0xFF, 3)
-  Tpm2GetCapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[0].sizeofSelect = 3
-  Tpm2GetCapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[1].hash = TPM_ALG_SHA384
-  memset(Tpm2GetCapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[1].pcrSelect, 0xFF, 3)
-  Tpm2GetCapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[1].sizeofSelect = 3
+  Tpm2CapabilityResponse = TPM2_GET_CAPABILITY_RESPONSE.from_buffer (DummyBuf, 0)
+  Tpm2CapabilityResponse.Header.tag = socket.ntohs (TPM_ST_SESSIONS)
+  Tpm2CapabilityResponse.Header.paramSize = socket.ntohl (0x54) # socket.ntohl (sizeof(TPM2_GET_CAPABILITY_RESPONSE) - 2)
+  Tpm2CapabilityResponse.Header.responseCode = socket.ntohl (TPM_RC_SUCCESS)
+  Tpm2CapabilityResponse.MoreData = socket.ntohl (0x0)
+  Tpm2CapabilityResponse.CapabilityData.data.assignedPCR.count = 2
+  Tpm2CapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[0].hash = TPM_ALG_SHA256
+  memset(Tpm2CapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[0].pcrSelect, 0xFF, 3)
+  Tpm2CapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[0].sizeofSelect = 3
+  Tpm2CapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[1].hash = TPM_ALG_SHA384
+  memset(Tpm2CapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[1].pcrSelect, 0xFF, 3)
+  Tpm2CapabilityResponse.CapabilityData.data.assignedPCR.pcrSelections[1].sizeofSelect = 3
 
   args.OutputFile.write(DummyBuf[2:])
 

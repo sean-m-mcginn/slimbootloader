@@ -110,7 +110,7 @@
   DebugPortLib|BootloaderCommonPkg/Library/DebugPortLib/DebugPortLibNull.inf
   CrashLogLib|Silicon/CommonSocPkg/Library/CrashLogLibNull/CrashLogLibNull.inf
   FusaConfigLib|Silicon/CommonSocPkg/Library/FusaConfigLibNull/FusaConfigLibNull.inf
-  ToolChainHarnessLib|BootloaderFuzzPkg/TestCode/BootloaderCommonPkg/Library/ToolChainHarnessLib/ToolChainHarnessLib.inf
+  ToolChainHarnessLib|UefiHostFuzzTestPkg/Library/ToolChainHarnessLib/ToolChainHarnessLib.inf
   BaseMemoryLib|UefiHostTestPkg/Library/BaseMemoryLibHost/BaseMemoryLibHost.inf
 
 [LibraryClasses.common.USER_DEFINED]
@@ -121,8 +121,13 @@
       Tpm2PtpStub|BootloaderFuzzPkg/TestStub/BootloaderCommonPkg/Library/TpmLib/Tpm2PtpStub.inf 
   }
 
+  BootloaderFuzzPkg/TestCase/BootloaderCommonPkg/Library/TpmLib/TestTpm2Hierarchy.inf {
+    <LibraryClasses>
+      Tpm2PtpStub|BootloaderFuzzPkg/TestStub/BootloaderCommonPkg/Library/TpmLib/Tpm2PtpStub.inf 
+  }
+
 [PcdsDynamicDefault]
 
 [PcdsFixedAtBuild]
 
-!include UefiHostTestPkg/UefiHostFuzzTestBuildOption.dsc
+!include UefiHostFuzzTestPkg/UefiHostFuzzTestBuildOption.dsc
