@@ -54,7 +54,7 @@ def get_bpmgen2_params_change_list ():
       ('AcmRevocation',         '2'),
       ('NEMPages',              '3'),
       ('AcpiBase',              '0x1800'),
-      ('IbbFlags',              '0x12'),
+      ('IbbFlags',              '0x16'),
       ('IbbHashAlgID',          '0x0C:SHA384'),
       ('MCHBAR',                '0x00000000FEDC0000'),
       ('VTD_BAR',               '0x00000000D0000000'),
