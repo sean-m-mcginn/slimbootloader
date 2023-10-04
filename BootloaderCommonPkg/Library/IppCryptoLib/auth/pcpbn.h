@@ -45,7 +45,7 @@ struct _cpBigNum
 };
 
 /* BN accessory macros */
-#define BN_ID(pBN)         ((pBN)->idCtx)
+#define BN_SET_ID(pBN)     ((pBN)->idCtx = (Ipp32u)idCtxBigNum ^ (Ipp32u)IPP_UINT_PTR(pBN))
 #define BN_SIGN(pBN)       ((pBN)->sgn)
 #define BN_POSITIVE(pBN)   (BN_SIGN(pBN)==ippBigNumPOS)
 #define BN_NEGATIVE(pBN)   (BN_SIGN(pBN)==ippBigNumNEG)
@@ -173,7 +173,7 @@ __INLINE IppsBigNumState* BN_Set(const BNU_CHUNK_T* pData, cpSize len, IppsBigNu
 }
 __INLINE IppsBigNumState* BN_Make(BNU_CHUNK_T* pData, BNU_CHUNK_T* pBuffer, cpSize len, IppsBigNumState* pBN)
 {
-   BN_ID(pBN)   = idCtxBigNum;
+   BN_SET_ID(pBN);
    BN_SIGN(pBN) = ippBigNumPOS;
    BN_SIZE(pBN) = 1;
    BN_ROOM(pBN) = len;

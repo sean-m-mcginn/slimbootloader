@@ -38,29 +38,51 @@
 #include "pcpbnu32misc.h"
 
 
-/*
-// number of leading zeros
-*/
-cpSize cpNLZ_BNU32(Ipp32u x)
-{
-   cpSize nlz = BITSIZE(Ipp32u);
-   if(x) {
-      nlz = 0;
-      if( 0==(x & 0xFFFF0000) ) { nlz +=16; x<<=16; }
-      if( 0==(x & 0xFF000000) ) { nlz += 8; x<<= 8; }
-      if( 0==(x & 0xF0000000) ) { nlz += 4; x<<= 4; }
-      if( 0==(x & 0xC0000000) ) { nlz += 2; x<<= 2; }
-      if( 0==(x & 0x80000000) ) { nlz++; }
-   }
-   return nlz;
-}
-
-/*
-// Convert Oct String into BNU representation
+/*F*
+//    Name: cpNLZ_BNU32
 //
-// Returns length of BNU in Ipp32u chunks
-*/
-cpSize cpFromOctStr_BNU32(Ipp32u* pBNU, const Ipp8u* pOctStr, cpSize strLen)
+// Purpose: Returns number of leading zeros of the 32-bit BN chunk.
+//
+// Returns:
+//       number of leading zeros of the 32-bit BN chunk
+//
+// Parameters:
+//    x         BigNum x
+//
+*F*/
+
+#if (_IPP < _IPP_H9)
+   cpSize cpNLZ_BNU32 (Ipp32u x)
+   {
+      cpSize nlz = BITSIZE(Ipp32u);
+      if(x) {
+         nlz = 0;
+         if( 0==(x & 0xFFFF0000) ) { nlz +=16; x<<=16; }
+         if( 0==(x & 0xFF000000) ) { nlz += 8; x<<= 8; }
+         if( 0==(x & 0xF0000000) ) { nlz += 4; x<<= 4; }
+         if( 0==(x & 0xC0000000) ) { nlz += 2; x<<= 2; }
+         if( 0==(x & 0x80000000) ) { nlz++; }
+      }
+      return nlz;
+   }
+#endif
+
+/*F*
+//    Name: cpFromOctStr_BNU32
+//
+// Purpose: Convert Oct String into BNU representation.
+//
+// Returns:
+//          size of BNU in BNU_CHUNK_T chunks
+//
+// Parameters:
+//    pOctStr     pointer to the source octet string
+//    strLen      octet string length
+//    pBNU        pointer to the target BN
+//
+*F*/
+
+cpSize cpFromOctStr_BNU32 (Ipp32u* pBNU, const Ipp8u* pOctStr, cpSize strLen)
 {
    cpSize bnuSize=0;
    *pBNU = 0;
@@ -68,10 +90,10 @@ cpSize cpFromOctStr_BNU32(Ipp32u* pBNU, const Ipp8u* pOctStr, cpSize strLen)
    /* start from the end of string */
    for(; strLen>=4; bnuSize++,strLen-=4) {
       /* pack 4 bytes into single Ipp32u value*/
-      *pBNU++ = ( pOctStr[strLen-4]<<(8*3) )
+      *pBNU++ = (Ipp32u)(( pOctStr[strLen-4]<<(8*3) )
                +( pOctStr[strLen-3]<<(8*2) )
                +( pOctStr[strLen-2]<<(8*1) )
-               +  pOctStr[strLen-1];
+               +  pOctStr[strLen-1]);
    }
 
    /* convert the beginning of the string */
@@ -89,18 +111,29 @@ cpSize cpFromOctStr_BNU32(Ipp32u* pBNU, const Ipp8u* pOctStr, cpSize strLen)
 }
 
 
-/*
-// Convert BNU into Octet String representation
+/*F*
+//    Name: cpToOctStr_BNU32
 //
-// Returns strLen or 0 if no success
-*/
-cpSize cpToOctStr_BNU32(Ipp8u* pStr, cpSize strLen, const Ipp32u* pBNU, cpSize bnuSize)
+// Purpose: Convert BNU into HexString representation.
+//
+// Returns:
+//       length of the string or 0 if no success
+//
+// Parameters:
+//    pBNU        pointer to the source BN
+//    bnuSize     size of BN
+//    pStr        pointer to the target octet string
+//    strLen      octet string length
+*F*/
+
+cpSize cpToOctStr_BNU32 (Ipp8u* pStr, cpSize strLen, const Ipp32u* pBNU, cpSize bnuSize)
 {
-   FIX_BNU(pBNU, bnuSize);
+   FIX_BNU32(pBNU, bnuSize);
    {
       int bnuBitSize = BITSIZE_BNU32(pBNU, bnuSize);
       if(bnuBitSize <= strLen*BYTESIZE) {
          Ipp32u x = pBNU[bnuSize-1];
+
          ZEXPAND_BNU(pStr, 0, strLen);
          pStr += strLen - BITS2WORD8_SIZE(bnuBitSize);
 

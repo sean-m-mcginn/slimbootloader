@@ -17,11 +17,8 @@
 #if !defined(_GS_MOD_METHOD_H)
 #define _GS_MOD_METHOD_H
 
-//#include "owndefs.h"
 #include "owncp.h"
-
 #include "pcpbnuimpl.h"
-//#include "gsmodstuff.h"
 
 typedef struct _gsModEngine gsEngine;
 
@@ -51,25 +48,6 @@ typedef struct _gsModMethod {
    mod_mul2 mul2;
    mod_mul3 mul3;
 } gsModMethod;
-
-__INLINE BNU_CHUNK_T cpIsZero(BNU_CHUNK_T x)
-{  return x==0; }
-__INLINE BNU_CHUNK_T cpIsNonZero(BNU_CHUNK_T x)
-{  return x!=0; }
-__INLINE BNU_CHUNK_T cpIsOdd(BNU_CHUNK_T x)
-{  return x&1; }
-__INLINE BNU_CHUNK_T cpIsEven(BNU_CHUNK_T x)
-{  return 1-cpIsOdd(x); }
-
-/* dst[] = (flag)? src[] : dst[] */
-__INLINE void cpMaskMove_gs(BNU_CHUNK_T* dst, const BNU_CHUNK_T* src, int len, BNU_CHUNK_T moveFlag)
-{
-   BNU_CHUNK_T srcMask = 0-cpIsNonZero(moveFlag);
-   BNU_CHUNK_T dstMask = ~srcMask;
-   int n;
-   for(n=0; n<len; n++)
-      dst[n] = (src[n] & srcMask) ^  (dst[n] & dstMask);
-}
 
 /* common available pre-defined methos */
 #define      gsModArith OWNAPI(gsModArith)

@@ -152,8 +152,8 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
                  Ipp32u* pX, cpSize sizeX,
                  Ipp32u* pY, cpSize sizeY)
 {
-   FIX_BNU(pY,sizeY);
-   FIX_BNU(pX,sizeX);
+   FIX_BNU32(pY,sizeY);
+   FIX_BNU32(pX,sizeX);
 
    /* special case */
    if(sizeX < sizeY) {
@@ -185,7 +185,7 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
       pX[0] = r;
 
       if(pQ) {
-         FIX_BNU(pQ,sizeX);
+         FIX_BNU32(pQ,sizeX);
          *sizeQ = sizeX;
       }
 
@@ -201,7 +201,7 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
 
       /* normalization */
       pX[sizeX] = 0;
-      if(nlz > 0 && nlz < 32) {
+      if(nlz) {
          cpSize ni;
 
          pX[sizeX] = pX[sizeX-1] >> (32-nlz);
@@ -234,9 +234,8 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
             Ipp64u r = tmp - q*yHi;
 #endif
 
-
             /* tune estimation above */
-            //for(; (q>=CONST_64(0x100000000)) || (Ipp64u)q*pY[sizeY-2] > MAKEDWORD(pX[i+sizeY-2],r); ) {
+            //for(; (q>=CONST_64(0x100000000)) || (Ipp64u)q*pY[sizeY-2] > IPP_MAKEDWORD(pX[i+sizeY-2],r); ) {
 #ifdef _SLIMBOOT_OPT
             for(; IPP_HIDWORD(q) || (Ipp64u)MultU64x32 (q, pY[sizeY-2]) > IPP_MAKEDWORD(pX[i+sizeY-2],r); ) {
 #else
@@ -273,10 +272,10 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
          pY[sizeY-1] >>= nlz;
       }
 
-      FIX_BNU(pX,sizeX);
+      FIX_BNU32(pX,sizeX);
 
       if(pQ) {
-         FIX_BNU(pQ,qs);
+         FIX_BNU32(pQ,qs);
          *sizeQ = qs;
       }
 
@@ -284,20 +283,3 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
    }
 }
 #endif
-
-#define FE_MUL(R,A,B,LEN) { \
-   int aidx, bidx; \
-   \
-   for(aidx=0; aidx<(LEN); aidx++) (R)[aidx] = 0; \
-   \
-   for(bidx=0; bidx<(LEN); bidx++) { \
-      Ipp64u b = (B)[bidx]; \
-      Ipp32u c = 0; \
-      for(aidx=0; aidx<(LEN); aidx++) { \
-         Ipp64u t = (R)[bidx+aidx] + (A)[aidx] * b + c; \
-         (R)[bidx+aidx] = IPP_LODWORD(t); \
-         c = IPP_HIDWORD(t); \
-      } \
-      (R)[bidx+aidx] = c; \
-   } \
-}

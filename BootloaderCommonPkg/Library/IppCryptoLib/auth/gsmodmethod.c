@@ -22,9 +22,9 @@
 #include "gsmodstuff.h"
 #include "gsmodmethod.h"
 #include "pcpmontred.h"
+#include "pcpmask_ct.h"
 
 #ifndef _SLIMBOOT_OPT
-//gres: temporary excluded: #include <assert.h>
 
 /* r = (a+m) mod m */
 /*
@@ -41,17 +41,19 @@ static BNU_CHUNK_T* gs_mont_add(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BN
 
    const int polLength  = 1;
    BNU_CHUNK_T* pBuffer = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pBuffer);
+   if(NULL == pBuffer)
+      return NULL;
+
    {
       BNU_CHUNK_T extension = cpAdd_BNU(pr, pa, pb, mLen);
       extension -= cpSub_BNU(pBuffer, pr, pm, mLen);
-      cpMaskMove_gs(pr, pBuffer, mLen, cpIsZero(extension));
+      cpMaskedReplace_ct(pr, pBuffer, mLen, cpIsZero_ct(extension));
    }
    gsModPoolFree(pME, polLength);
    return pr;
 }
 
-/* r = (a-m) mod m */
+/* r = (a-b) mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -66,16 +68,19 @@ static BNU_CHUNK_T* gs_mont_sub(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BN
 
    const int polLength  = 1;
    BNU_CHUNK_T* pBuffer = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pBuffer);
+   if(NULL == pBuffer)
+      return NULL;
+
    {
       BNU_CHUNK_T extension = cpSub_BNU(pr, pa, pb, mLen);
       cpAdd_BNU(pBuffer, pr, pm, mLen);
-      cpMaskMove_gs(pr, pBuffer, mLen, cpIsNonZero(extension));
+      cpMaskedReplace_ct(pr, pBuffer, mLen, ~cpIsZero_ct(extension));
    }
    gsModPoolFree(pME, polLength);
    return pr;
 }
 
+/* r = (m-a) mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -89,16 +94,19 @@ static BNU_CHUNK_T* gs_mont_neg(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEng
 
    const int polLength  = 1;
    BNU_CHUNK_T* pBuffer = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pBuffer);
+   if(NULL == pBuffer)
+      return NULL;
+
    {
       BNU_CHUNK_T extension = cpSub_BNU(pr, pm, pa, mLen);
       extension -= cpSub_BNU(pBuffer, pr, pm, mLen);
-      cpMaskMove_gs(pr, pBuffer, mLen, cpIsZero(extension));
+      cpMaskedReplace_ct(pr, pBuffer, mLen, cpIsZero_ct(extension));
    }
    gsModPoolFree(pME, polLength);
    return pr;
 }
 
+/* r = (a/2) mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -112,7 +120,9 @@ static BNU_CHUNK_T* gs_mont_div2(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEn
 
    const int polLength  = 1;
    BNU_CHUNK_T* pBuffer = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pBuffer);
+   if(NULL == pBuffer)
+      return NULL;
+
    {
       cpSize i;
       BNU_CHUNK_T mask = 0 - (pa[0]&1);
@@ -127,6 +137,7 @@ static BNU_CHUNK_T* gs_mont_div2(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEn
    return pr;
 }
 
+/* r = (a*2) mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -138,6 +149,7 @@ static BNU_CHUNK_T* gs_mont_mul2(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEn
    return gs_mont_add(pr, pa, pa, pME);
 }
 
+/* r = (a*3) mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -148,7 +160,8 @@ static BNU_CHUNK_T* gs_mont_mul3(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEn
 {
    const int polLength  = 1;
    BNU_CHUNK_T* pBuffer = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pBuffer);
+   if(NULL == pBuffer)
+      return NULL;
 
    gs_mont_add(pBuffer, pa, pa, pME);
    gs_mont_add(pr, pa, pBuffer, pME);
@@ -157,25 +170,14 @@ static BNU_CHUNK_T* gs_mont_mul3(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEn
    return pr;
 }
 
-#if !((_IPP==_IPP_W7) || \
-      (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || \
-      (_IPP==_IPP_P8) || \
-      (_IPP>=_IPP_G9) || \
-      (_IPP==_IPP_S8) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || \
-      (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8)) || \
-      defined(_USE_C_cpMontRedAdc_BNU_)
-
+/* r = prod mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
  *   Length of prod data buffer: modLen * 2
  *   Memory size from the pool:  n/a
  */
+#if ((_IPP <_IPP_W7) && (_IPP32E <_IPP32E_M7)) || defined(_USE_C_cpMontRedAdc_BNU_)
 static BNU_CHUNK_T* gs_mont_red(BNU_CHUNK_T* pr, BNU_CHUNK_T* prod, gsModEngine* pME)
 {
    const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
@@ -201,7 +203,7 @@ static BNU_CHUNK_T* gs_mont_red(BNU_CHUNK_T* pr, BNU_CHUNK_T* prod, gsModEngine*
       for(j=1; j<mLen; j++) {
          BNU_CHUNK_T c;
          MUL_AB(muH, muL, pm[j], u);         /* (H,L) = m[j]*u */
-         ADD_AB(ex_mu, t, prod[j], ex_mu);   /* carry in ex_mu,t */
+         ADD_AB(ex_mu, t, prod[j], ex_mu);   /* carry in ex_mu,t */ 
          ADD_AB(c, prod[j], t, muL);         /* carry in c */
          ex_mu += muH+c;                     /* accumulates both carrys above */
       }
@@ -210,7 +212,8 @@ static BNU_CHUNK_T* gs_mont_red(BNU_CHUNK_T* pr, BNU_CHUNK_T* prod, gsModEngine*
 
    {
       carry -= cpSub_BNU(pr, prod, pm, mLen);
-      cpMaskMove_gs(pr, prod, mLen, cpIsNonZero(carry));
+      cpMaskedReplace_ct(pr, prod, mLen, ~cpIsZero_ct(carry));
+
       return pr;
    }
 }
@@ -229,25 +232,29 @@ static BNU_CHUNK_T* gs_mont_red(BNU_CHUNK_T* pr, BNU_CHUNK_T* prod, gsModEngine*
    BNU_CHUNK_T k0 = MOD_MNT_FACTOR(pME);
    int mLen = MOD_LEN(pME);
 
-   cpMontRed_BNU_opt(pr, prod, pm, mLen, k0);
+   cpMontRedAdc_BNU(pr, prod, pm, mLen, k0);
+
+   return pr;
+}
+
+#if (_IPP32E>=_IPP32E_L9)
+static BNU_CHUNK_T gs_mont_redX(BNU_CHUNK_T* pr, BNU_CHUNK_T* prod, gsModEngine* pME)
+{
+   const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
+   BNU_CHUNK_T k0 = MOD_MNT_FACTOR(pME);
+   int mLen = MOD_LEN(pME);
+
+   cpMontRedAdx_BNU(pr, prod, pm, mLen, k0);
 
    return pr;
 }
 #endif
+
 #endif
 
-#if !((_IPP==_IPP_W7) || \
-      (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || \
-      (_IPP==_IPP_P8) || \
-      (_IPP>=_IPP_G9) || \
-      (_IPP==_IPP_S8) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || \
-      (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8))
+#endif
 
+/* r = (a*b) mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -255,6 +262,7 @@ static BNU_CHUNK_T* gs_mont_red(BNU_CHUNK_T* pr, BNU_CHUNK_T* prod, gsModEngine*
  *   Length of pb data buffer:   modLen
  *   Memory size from the pool:  modLen * sizeof(BNU_CHUNK_T) * 2
  */
+#if ((_IPP <_IPP_W7) && (_IPP32E <_IPP32E_M7))
 static BNU_CHUNK_T* gs_mont_mul(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BNU_CHUNK_T* pb, gsModEngine* pME)
 {
    const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
@@ -263,14 +271,15 @@ static BNU_CHUNK_T* gs_mont_mul(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BN
 
    const int polLength  = 1;
    BNU_CHUNK_T* pBuffer = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pBuffer);
+   if(NULL == pBuffer)
+      return NULL;
 
-   if (pBuffer != NULL) {
+   {
       BNU_CHUNK_T carry = 0;
       int i, j;
 
       /* clear buffer */
-      ZEXPAND_BNU (pBuffer, 0, mLen);
+      for(i=0; i<mLen; i++) pBuffer[i] = 0;
 
       /* mont mul */
       for(i=0; i<mLen; i++) {
@@ -311,7 +320,7 @@ static BNU_CHUNK_T* gs_mont_mul(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BN
       }
 
       carry -= cpSub_BNU(pr, pBuffer, pm, mLen);
-      cpMaskMove_gs(pr, pBuffer, mLen, cpIsNonZero(carry));
+      cpMaskedReplace_ct(pr, pBuffer, mLen, ~cpIsZero_ct(carry));
    }
 
    gsModPoolFree(pME, polLength);
@@ -334,16 +343,38 @@ static BNU_CHUNK_T* gs_mont_mul(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BN
 
    const int polLength  = 2;
    BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pProduct);
+   if(NULL == pProduct)
+      return NULL;
 
-   cpMul_BNU(pProduct, pa,mLen, pb,mLen, 0);
-   cpMontRed_BNU_opt(pr, pProduct, pm, mLen, m0);
+   cpMulAdc_BNU_school(pProduct, pa,mLen, pb,mLen);
+   cpMontRedAdc_BNU(pr, pProduct, pm, mLen, m0);
+
+   gsModPoolFree(pME, polLength);
+   return pr;
+}
+
+#if (_IPP32E>=_IPP32E_L9)
+static BNU_CHUNK_T* gs_mont_mulX(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BNU_CHUNK_T* pb, gsModEngine* pME))
+{
+   const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
+   BNU_CHUNK_T m0 = MOD_MNT_FACTOR(pME);
+   int mLen = MOD_LEN(pME);
+
+   const int polLength  = 2;
+   BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
+   if(NULL == pProduct)
+      return NULL;
+
+   cpMulAdx_BNU_school(pProduct, pa,mLen, pb,mLen);
+   cpMontRedAdx_BNU(pr, pProduct, pm, mLen, m0);
 
    gsModPoolFree(pME, polLength);
    return pr;
 }
 #endif
+#endif
 
+/* r = (a^2) mod m */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -352,9 +383,44 @@ static BNU_CHUNK_T* gs_mont_mul(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, const BN
  */
 static BNU_CHUNK_T* gs_mont_sqr(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pME)
 {
-   return gs_mont_mul(pr, pa, pa, pME);
+   //return gs_mont_mul(pr, pa, pa, pME);
+   const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
+   BNU_CHUNK_T m0 = MOD_MNT_FACTOR(pME);
+   int mLen = MOD_LEN(pME);
+
+   const int polLength  = 2;
+   BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
+   if(NULL == pProduct)
+      return NULL;
+
+   cpSqrAdc_BNU_school(pProduct, pa,mLen);
+   cpMontRedAdc_BNU(pr, pProduct, pm, mLen, m0);
+
+   gsModPoolFree(pME, polLength);
+   return pr;
 }
 
+#if (_IPP32E>=_IPP32E_L9)
+static BNU_CHUNK_T* gs_mont_sqrX (BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pME))
+{
+   const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
+   BNU_CHUNK_T m0 = MOD_MNT_FACTOR(pME);
+   int mLen = MOD_LEN(pME);
+
+   const int polLength  = 2;
+   BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
+   if(NULL == pProduct)
+      return NULL;
+
+   cpSqrAdx_BNU_school(pProduct, pa,mLen);
+   cpMontRedAdx_BNU(pr, pProduct, pm, mLen, m0);
+
+   gsModPoolFree(pME, polLength);
+   return pr;
+}
+#endif
+
+/* r = to_mont(a) */
 /*
  * Requirements:
  *   Length of pr data buffer:   modLen
@@ -363,20 +429,43 @@ static BNU_CHUNK_T* gs_mont_sqr(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEng
  */
 static BNU_CHUNK_T* gs_mont_encode(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pME)
 {
-   return gs_mont_mul(pr, pa, MOD_MNT_R2(pME), pME);
+   //return gs_mont_mul(pr, pa, MOD_MNT_R2(pME), pME);
+   const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
+   BNU_CHUNK_T m0 = MOD_MNT_FACTOR(pME);
+   int mLen = MOD_LEN(pME);
+
+   const int polLength  = 2;
+   BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
+   if(NULL == pProduct)
+      return NULL;
+
+   cpMulAdc_BNU_school(pProduct, pa,mLen, MOD_MNT_R2(pME),mLen);
+   cpMontRedAdc_BNU(pr, pProduct, pm, mLen, m0);
+
+   gsModPoolFree(pME, polLength);
+   return pr;
 }
 
-#if !((_IPP==_IPP_W7) || \
-      (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || \
-      (_IPP==_IPP_P8) || \
-      (_IPP>=_IPP_G9) || \
-      (_IPP==_IPP_S8) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || \
-      (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8))
+#if (_IPP32E>=_IPP32E_L9)
+static BNU_CHUNK_T* gs_mont_encodeX(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pME)
+{
+   //return gs_mont_mul(pr, pa, MOD_MNT_R2(pME), pME);
+   const BNU_CHUNK_T* pm = MOD_MODULUS(pME);
+   BNU_CHUNK_T m0 = MOD_MNT_FACTOR(pME);
+   int mLen = MOD_LEN(pME);
+
+   const int polLength  = 2;
+   BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
+   if(NULL == pProduct)
+      return NULL;
+
+   cpMulAdx_BNU_school(pProduct, pa,mLen, MOD_MNT_R2(pME),mLen);
+   cpMontRedAdx_BNU(pr, pProduct, pm, mLen, m0);
+
+   gsModPoolFree(pME, polLength);
+   return pr;
+}
+#endif
 
 /*
  * Requirements:
@@ -388,43 +477,34 @@ static BNU_CHUNK_T* gs_mont_decode(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsMod
 {
    int mLen = MOD_LEN(pME);
 
-   const int polLength  = 1;
-   BNU_CHUNK_T* t = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=t);
-
-   if (t != NULL) {
-      ZEXPAND_BNU(t, 0, mLen);
-      t[0] = 1;
-      gs_mont_mul(pr, pa, t, pME);
-      gsModPoolFree(pME, polLength);
-   }
-
-   return pr;
-}
-
-#else
-
-/*
- * Requirements:
- *   Length of pr data buffer:   modLen
- *   Length of pa data buffer:   modLen
- *   Memory size from the pool:  modLen * sizeof(BNU_CHUNK_T)
- */
-static BNU_CHUNK_T* gs_mont_decode(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pME)
-{
-   int mLen = MOD_LEN(pME);
-
    const int polLength  = 2;
    BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
-   //gres: temporary excluded: assert(NULL!=pProduct);
+   if(NULL == pProduct)
+      return NULL;
 
    ZEXPAND_COPY_BNU(pProduct, 2*mLen, pa, mLen);
-   gs_mont_red(pr, pProduct, pME);
+   cpMontRedAdc_BNU(pr, pProduct, MOD_MODULUS(pME), mLen, MOD_MNT_FACTOR(pME));
 
    gsModPoolFree(pME, polLength);
    return pr;
 }
 
+#if (_IPP32E>=_IPP32E_L9)
+static BNU_CHUNK_T* gs_mont_decodeX(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pME)
+{
+   int mLen = MOD_LEN(pME);
+
+   const int polLength  = 2;
+   BNU_CHUNK_T* pProduct = gsModPoolAlloc(pME, polLength);
+   if(NULL == pProduct)
+      return NULL;
+
+   ZEXPAND_COPY_BNU(pProduct, 2*mLen, pa, mLen);
+   cpMontRedAdx_BNU(pr, pProduct, MOD_MODULUS(pME), mLen, MOD_MNT_FACTOR(pME));
+
+   gsModPoolFree(pME, polLength);
+   return pr;
+}
 #endif
 
 #ifndef _SLIMBOOT_OPT

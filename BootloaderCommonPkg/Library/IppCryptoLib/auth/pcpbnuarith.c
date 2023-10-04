@@ -65,8 +65,7 @@
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8) || \
-      (_IPPLRB>=_IPPLRB_B1)) || \
+      (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpAdd_BNU_)
 BNU_CHUNK_T cpAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns)
 {
@@ -96,8 +95,7 @@ BNU_CHUNK_T cpAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T*
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8) || \
-      (_IPPLRB>=_IPPLRB_B1)) || \
+      (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpSub_BNU_)
 BNU_CHUNK_T cpSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns)
 {
@@ -164,63 +162,6 @@ BNU_CHUNK_T cpDec_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHU
 }
 #endif
 
-/* Function cpAddAdd_BNU */
-#if defined(_USE_KARATSUBA_)
-#if !((_IPP==_IPP_W7) || \
-      (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || \
-      (_IPP==_IPP_P8) || \
-      (_IPP>=_IPP_G9) || \
-      (_IPP==_IPP_S8) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || \
-      (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8))
-BNU_CHUNK_T cpAddAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, const BNU_CHUNK_T* pC, cpSize ns)
-{
-   BNU_CHUNK_T carry1 = 0;
-   BNU_CHUNK_T carry2 = 0;
-   cpSize i;
-   for(i=0; i<ns; i++) {
-      BNU_CHUNK_T s;
-      ADD_ABC(carry1, s, pA[i],pB[i],carry1);
-      ADD_ABC(carry2, pR[i], s,pC[i],carry2);
-   }
-   return (carry1+carry2);
-}
-#endif
-#endif
-
-/* Function cpAddSub_BNU */
-#if defined(_USE_KARATSUBA_)
-#if !((_IPP==_IPP_W7) || \
-      (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || \
-      (_IPP==_IPP_P8) || \
-      (_IPP>=_IPP_G9) || \
-      (_IPP==_IPP_S8) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || \
-      (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8))
-BNU_CHUNK_T cpAddSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, const BNU_CHUNK_T* pC, cpSize ns)
-{
-   BNU_CHUNK_T carry = 0;
-   BNU_CHUNK_T borrow = 0;
-   cpSize i;
-   for(i=0; i<ns; i++) {
-      BNU_CHUNK_T d;
-      SUB_ABC(borrow, d, pB[i], pC[i], borrow);
-      ADD_ABC(carry,  pR[i], d, pA[i], carry);
-   }
-   return (carry-borrow);
-}
-#endif
-#endif
-
-
 /* Function cpAddMulDgt_BNU - multiply-and-add BNU */
 #if defined(_USE_C_cpAddMulDgt_BNU_)
 #pragma message ("C version of cpAddMulDgt_BNU: ON")
@@ -273,8 +214,7 @@ BNU_CHUNK_T cpAddMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, B
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8) || \
-      (_IPPLRB >= _IPPLRB_B1)) || \
+      (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpSubMulDgt_BNU_)
 BNU_CHUNK_T cpSubMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
 {
@@ -467,8 +407,8 @@ int cpModInv_BNU(BNU_CHUNK_T* pInv,
             const BNU_CHUNK_T* pM, cpSize nsM,
                   BNU_CHUNK_T* bufInv, BNU_CHUNK_T* bufA, BNU_CHUNK_T* bufM)
 {
-    FIX_BNU(pA, nsA);
-    FIX_BNU(pM, nsM);
+   FIX_BNU(pA, nsA);
+   FIX_BNU(pM, nsM);
 
    /* inv(1) = 1 */
    if(nsA==1 && pA[0]==1) {
@@ -492,13 +432,9 @@ int cpModInv_BNU(BNU_CHUNK_T* pInv,
       ZEXPAND_BNU(X2, 0, moduloSize);
       X2[0] = 1;
 
-      //printf("\n");
       for(;;) {
          nsM = cpDiv_BNU(Q, &nsQ, (BNU_CHUNK_T*)pM, nsM, bufA, nsA);
-         //Print_BNU(" q: ", Q, nsQ);
-         //Print_BNU(" m: ", pM, nsM);
          nsX1 = cpMac_BNU(X1,moduloSize, Q,nsQ, X2,nsX2);
-         //Print_BNU("X1: ", X1, nsX1);
 
          if (nsM==1 && pM[0]==1) {
             ////ZEXPAND_BNU(X2, nsX2, moduloSize);
@@ -515,10 +451,7 @@ int cpModInv_BNU(BNU_CHUNK_T* pInv,
          }
 
          nsA = cpDiv_BNU(Q, &nsQ, bufA, nsA, (BNU_CHUNK_T*)pM, nsM);
-         //Print_BNU(" q: ", Q, nsQ);
-         //Print_BNU(" a: ", bufA, nsA);
          nsX2 = cpMac_BNU(X2,moduloSize, Q,nsQ, X1,nsX1);
-         //Print_BNU("X2: ", X2, nsX2);
 
          if(nsA==1 && bufA[0]==1) {
             ////ZEXPAND_BNU(X1, nsX1, moduloSize);
