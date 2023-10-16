@@ -1,31 +1,30 @@
 /*******************************************************************************
-* Copyright 2013-2020 Intel Corporation
+* Copyright (C) 2013 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
-/*
-//
+/* 
+// 
 //  Purpose:
 //     Cryptography Primitive.
 //     Digesting message according to SM3
-//
+// 
 //  Contents:
-//     ippsSM3Init()
-//     ippsSM3Update()
-//     ippsSM3Final()
-//
-//
+//     SM3 methods and constants
+// 
+// 
 */
 
 #include "owndefs.h"
@@ -34,6 +33,8 @@
 #include "pcphash_rmf.h"
 #include "pcptool.h"
 
+#if !defined _PCP_SM3_STUFF_H
+#define _PCP_SM3_STUFF_H
 
 /* SM3 constants */
 static const Ipp32u sm3_iv[] = {
@@ -51,7 +52,7 @@ static __ALIGN16 const Ipp32u sm3_cnt[] = {
    0x8A7A879D,0x14F50F3B,0x29EA1E76,0x53D43CEC,0xA7A879D8,0x4F50F3B1,0x9EA1E762,0x3D43CEC5
 };
 
-static void sm3_hashInit(void* pHash)
+static void sm3_hashInit (void* pHash)
 {
    /* setup initial digest */
    ((Ipp32u*)pHash)[0] = sm3_iv[0];
@@ -64,12 +65,12 @@ static void sm3_hashInit(void* pHash)
    ((Ipp32u*)pHash)[7] = sm3_iv[7];
 }
 
-static void sm3_hashUpdate(void* pHash, const Ipp8u* pMsg, int msgLen)
+static void sm3_hashUpdate (void* pHash, const Ipp8u* pMsg, int msgLen)
 {
    UpdateSM3(pHash, pMsg, msgLen, sm3_cnt);
 }
 
-static void sm3_hashOctString(Ipp8u* pMD, void* pHashVal)
+static void sm3_hashOctString (Ipp8u* pMD, void* pHashVal)
 {
    /* convert hash into big endian */
    ((Ipp32u*)pMD)[0] = ENDIANNESS32(((Ipp32u*)pHashVal)[0]);
@@ -82,7 +83,7 @@ static void sm3_hashOctString(Ipp8u* pMD, void* pHashVal)
    ((Ipp32u*)pMD)[7] = ENDIANNESS32(((Ipp32u*)pHashVal)[7]);
 }
 
-static void sm3_msgRep(Ipp8u* pDst, Ipp64u lenLo, Ipp64u lenHi)
+static void sm3_msgRep (Ipp8u* pDst, Ipp64u lenLo, Ipp64u lenHi)
 {
    IPP_UNREFERENCED_PARAMETER(lenHi);
 #ifdef _SLIMBOOT_OPT
@@ -94,191 +95,17 @@ static void sm3_msgRep(Ipp8u* pDst, Ipp64u lenLo, Ipp64u lenHi)
 }
 
 #define cpFinalizeSM3 OWNAPI(cpFinalizeSM3)
-void cpFinalizeSM3(DigestSHA1 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u processedMsgLen);
-
-//#endif /* #if !defined _PCP_SM3_STUFF_H */
-
-
-
-void cpFinalizeSM3(DigestSHA1 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u processedMsgLen)
-{
-   /* local buffer and it length */
-   Ipp8u buffer[MBS_SM3*2];
-   int bufferLen = inpLen < (MBS_SM3-(int)MLR_SM3)? MBS_SM3 : MBS_SM3*2;
-
-   /* copy rest of message into internal buffer */
-   CopyBlock(inpBuffer, buffer, inpLen);
-
-   /* padd message */
-   buffer[inpLen++] = 0x80;
-   PadBlock(0, buffer+inpLen, (cpSize)(bufferLen-inpLen-(int)MLR_SM3));
-
-   /* put processed message length in bits */
-#ifdef _SLIMBOOT_OPT
-   processedMsgLen = ENDIANNESS64(LShiftU64 (processedMsgLen, 3));
-#else
-   processedMsgLen = ENDIANNESS64(processedMsgLen<<3);
-#endif
-   ((Ipp64u*)(buffer+bufferLen))[-1] = processedMsgLen;
-
-   /* copmplete hash computation */
-   UpdateSM3(pHash, buffer, bufferLen, sm3_cnt);
-}
-
+   void cpFinalizeSM3 (DigestSHA1 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u processedMsgLen);
 
 /*F*
-//    Name: ippsSM3Init
+//    Name: ippsHashMethod_SM3
 //
-// Purpose: Init SM3
+// Purpose: Return SM3 method.
 //
-// Returns:                Reason:
-//    ippStsNullPtrErr        pState == NULL
-//    ippStsNoErr             no errors
-//
-// Parameters:
-//    pState      pointer to the SHA512 state
+// Returns:
+//          Pointer to SM3 hash-method.
 //
 *F*/
-IPPFUN(IppStatus, ippsSM3Init,(IppsSM3State* pState))
-{
-   /* test state pointer */
-   IPP_BAD_PTR1_RET(pState);
-   pState = (IppsSM3State*)( IPP_ALIGNED_PTR(pState, SM3_ALIGNMENT) );
-
-   PadBlock(0, pState, sizeof(IppsSM3State));
-   HASH_CTX_ID(pState) = idCtxSM3;
-   sm3_hashInit(HASH_VALUE(pState));
-   return ippStsNoErr;
-}
-
-/*F*
-//    Name: ippsSM3Update
-//
-// Purpose: Updates intermediate digest based on input stream.
-//
-// Returns:                Reason:
-//    ippStsNullPtrErr        pSrc == NULL
-//                            pState == NULL
-//    ippStsContextMatchErr   pState->idCtx != idCtxSM3
-//    ippStsLengthErr         len <0
-//    ippStsNoErr             no errors
-//
-// Parameters:
-//    pSrc        pointer to the input stream
-//    len         input stream length
-//    pState      pointer to the SM3 state
-//
-*F*/
-IPPFUN(IppStatus, ippsSM3Update,(const Ipp8u* pSrc, int len, IppsSM3State* pState))
-{
-   /* test state pointer and ID */
-   IPP_BAD_PTR1_RET(pState);
-   pState = (IppsSM3State*)( IPP_ALIGNED_PTR(pState, SM3_ALIGNMENT) );
-   IPP_BADARG_RET(idCtxSM3 !=HASH_CTX_ID(pState), ippStsContextMatchErr);
-
-   /* test input length */
-   IPP_BADARG_RET((len<0), ippStsLengthErr);
-   /* test source pointer */
-   IPP_BADARG_RET((len && !pSrc), ippStsNullPtrErr);
-
-   /*
-   // handle non empty message
-   */
-   if(len) {
-      int procLen;
-
-      int idx = HAHS_BUFFIDX(pState);
-      Ipp8u* pBuffer = HASH_BUFF(pState);
-      Ipp64u lenLo = HASH_LENLO(pState) +len;
-
-      /* if non empty internal buffer filling */
-      if(idx) {
-         /* copy from input stream to the internal buffer as match as possible */
-         procLen = IPP_MIN(len, (MBS_SM3-idx));
-         CopyBlock(pSrc, pBuffer+idx, procLen);
-
-         /* update message pointer and length */
-         idx  += procLen;
-         pSrc += procLen;
-         len  -= procLen;
-
-         /* update digest if buffer full */
-         if( MBS_SM3 == idx) {
-            UpdateSM3(HASH_VALUE(pState), pBuffer, MBS_SM3, sm3_cnt);
-            idx = 0;
-         }
-      }
-
-      /* main message part processing */
-      procLen = len & ~(MBS_SM3-1);
-      if(procLen) {
-         UpdateSM3(HASH_VALUE(pState), pSrc, procLen, sm3_cnt);
-         pSrc += procLen;
-         len  -= procLen;
-      }
-
-      /* store rest of message into the internal buffer */
-      if(len) {
-         CopyBlock(pSrc, pBuffer, len);
-         idx += len;
-      }
-
-      /* update length of processed message */
-      HASH_LENLO(pState) = lenLo;
-      HAHS_BUFFIDX(pState) = idx;
-   }
-
-   return ippStsNoErr;
-}
-
-/*F*
-//    Name: ippsSM3Final
-//
-// Purpose: Stop message digesting and return digest.
-//
-// Returns:                Reason:
-//    ippStsNullPtrErr        pState == NULL
-//                            pMD == NULL
-//    ippStsContextMatchErr   pState->idCtx != idCtxSM3
-//    ippStsNoErr             no errors
-//
-// Parameters:
-//    pMD         address of the output digest
-//    pState      pointer to the SM3 state
-//
-*F*/
-IPPFUN(IppStatus, ippsSM3Final,(Ipp8u* pMD, IppsSM3State* pState))
-{
-   /* test state pointer and ID */
-   IPP_BAD_PTR1_RET(pState);
-   pState = (IppsSM3State*)( IPP_ALIGNED_PTR(pState, SM3_ALIGNMENT) );
-   IPP_BADARG_RET(idCtxSM3 !=HASH_CTX_ID(pState), ippStsContextMatchErr);
-
-   /* test digest pointer */
-   IPP_BAD_PTR1_RET(pMD);
-
-   cpFinalizeSM3(HASH_VALUE(pState), HASH_BUFF(pState), HAHS_BUFFIDX(pState), HASH_LENLO(pState));
-   /* convert hash into big endian */
-   ((Ipp32u*)pMD)[0] = ENDIANNESS32(HASH_VALUE(pState)[0]);
-   ((Ipp32u*)pMD)[1] = ENDIANNESS32(HASH_VALUE(pState)[1]);
-   ((Ipp32u*)pMD)[2] = ENDIANNESS32(HASH_VALUE(pState)[2]);
-   ((Ipp32u*)pMD)[3] = ENDIANNESS32(HASH_VALUE(pState)[3]);
-   ((Ipp32u*)pMD)[4] = ENDIANNESS32(HASH_VALUE(pState)[4]);
-   ((Ipp32u*)pMD)[5] = ENDIANNESS32(HASH_VALUE(pState)[5]);
-   ((Ipp32u*)pMD)[6] = ENDIANNESS32(HASH_VALUE(pState)[6]);
-   ((Ipp32u*)pMD)[7] = ENDIANNESS32(HASH_VALUE(pState)[7]);
-
-   /* re-init hash value */
-   HAHS_BUFFIDX(pState) = 0;
-   HASH_LENLO(pState) = 0;
-   sm3_hashInit(HASH_VALUE(pState));
-
-   return ippStsNoErr;
-}
-
-/*
-// available SM3 methods
-*/
 IPPFUN( const IppsHashMethod*, ippsHashMethod_SM3, (void) )
 {
    static IppsHashMethod method = {
@@ -286,17 +113,21 @@ IPPFUN( const IppsHashMethod*, ippsHashMethod_SM3, (void) )
       IPP_SM3_DIGEST_BITSIZE/8,
       MBS_SM3,
       MLR_SM3,
-      sm3_hashInit,
-      sm3_hashUpdate,
-      sm3_hashOctString,
-      sm3_msgRep
+      0,
+      0,
+      0,
+      0
    };
+
+   method.hashInit   = sm3_hashInit;
+   method.hashUpdate = sm3_hashUpdate;
+   method.hashOctStr = sm3_hashOctString;
+   method.msgLenRep  = sm3_msgRep;
+
    return &method;
 }
 
-
-
-#pragma message("IPP_ALG_HASH_SM3 enabled")
+#if defined(_ENABLE_ALG_SM3_)
 
 #if !((_IPP32E>=_IPP32E_U8) || (_IPP32E==_IPP32E_N8) )
 
@@ -405,7 +236,6 @@ IPPFUN( const IppsHashMethod*, ippsHashMethod_SM3, (void) )
 //
 *F*/
 #if defined(_ALG_SM3_COMPACT_)
-#pragma message("SM3 compact")
 
 __INLINE Ipp32u MagicFF(int s, Ipp32u a, Ipp32u b, Ipp32u c)
 {
@@ -422,7 +252,7 @@ __INLINE Ipp32u MagicGG(int s, Ipp32u e, Ipp32u f, Ipp32u g)
    }
 }
 
-void UpdateSM3(void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
+void UpdateSM3 (void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
 {
    Ipp32u* data = (Ipp32u*)mblk;
 
@@ -479,7 +309,7 @@ void UpdateSM3(void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
 }
 
 #else
-void UpdateSM3(void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
+void UpdateSM3 (void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
 {
    Ipp32u* data = (Ipp32u*)mblk;
 
@@ -600,3 +430,6 @@ void UpdateSM3(void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
 #endif
 
 #endif /* _PX/_W7/_T7, _MX/_M7 versions */
+#endif /* IPP_ALG_HASH_SM3 */
+
+#endif /* #if !defined _PCP_SM3_STUFF_H */

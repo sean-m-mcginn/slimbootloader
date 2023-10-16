@@ -23,6 +23,8 @@
 #include "pcphash_rmf.h"
 #include "pcptool.h"
 
+#if !defined(_PCP_SHA512_STUFF_H)
+#define _PCP_SHA512_STUFF_H
 
 /* SHA-512, SHA-384, SHA512-224, SHA512 constants */
 static const Ipp64u sha512_iv[] = {
@@ -35,6 +37,16 @@ static const Ipp64u sha512_384_iv[] = {
    CONST_64(0x9159015A3070DD17), CONST_64(0x152FECD8F70E5939),
    CONST_64(0x67332667FFC00B31), CONST_64(0x8EB44A8768581511),
    CONST_64(0xDB0C2E0D64F98FA7), CONST_64(0x47B5481DBEFA4FA4)};
+static const Ipp64u sha512_256_iv[] = {
+   CONST_64(0x22312194FC2BF72C), CONST_64(0x9F555FA3C84C64C2),
+   CONST_64(0x2393B86B6F53B151), CONST_64(0x963877195940EABD),
+   CONST_64(0x96283EE2A88EFFE3), CONST_64(0xBE5E1E2553863992),
+   CONST_64(0x2B0199FC2C85B8AA), CONST_64(0x0EB72DDC81C52CA2)};
+static const Ipp64u sha512_224_iv[] = {
+   CONST_64(0x8C3D37C819544DA2), CONST_64(0x73E1996689DCD4D6),
+   CONST_64(0x1DFAB7AE32FF9C82), CONST_64(0x679DD514582F9FCF),
+   CONST_64(0x0F6D2B697BD44DA8), CONST_64(0x77E36F7304C48942),
+   CONST_64(0x3F9D85A86A1D36C8), CONST_64(0x1112E6AD91D692A1)};
 
 static __ALIGN16 const Ipp64u sha512_cnt[] = {
    CONST_64(0x428A2F98D728AE22), CONST_64(0x7137449123EF65CD), CONST_64(0xB5C0FBCFEC4D3B2F), CONST_64(0xE9B5DBA58189DBBC),
@@ -71,22 +83,30 @@ __INLINE void hashInit(Ipp64u* pHash, const Ipp64u* iv)
    pHash[6] = iv[6];
    pHash[7] = iv[7];
 }
-static void sha512_hashInit(void* pHash)
+static void sha512_hashInit (void* pHash)
 {
    hashInit((Ipp64u*)pHash, sha512_iv);
 }
-static void sha512_384_hashInit(void* pHash)
+static void sha512_384_hashInit (void* pHash)
 {
    hashInit((Ipp64u*)pHash, sha512_384_iv);
 }
-
-static void sha512_hashUpdate(void* pHash, const Ipp8u* pMsg, int msgLen)
+static void sha512_256_hashInit (void* pHash)
 {
-   UpdateSHA512 (pHash, pMsg, msgLen, sha512_cnt);
+   hashInit((Ipp64u*)pHash, sha512_256_iv);
+}
+static void sha512_224_hashInit (void* pHash)
+{
+   hashInit((Ipp64u*)pHash, sha512_224_iv);
+}
+
+static void sha512_hashUpdate (void* pHash, const Ipp8u* pMsg, int msgLen)
+{
+   UpdateSHA512(pHash, pMsg, msgLen, sha512_cnt);
 }
 
 /* convert hash into big endian */
-static void sha512_hashOctString(Ipp8u* pMD, void* pHashVal)
+static void sha512_hashOctString (Ipp8u* pMD, void* pHashVal)
 {
    ((Ipp64u*)pMD)[0] = ENDIANNESS64(((Ipp64u*)pHashVal)[0]);
    ((Ipp64u*)pMD)[1] = ENDIANNESS64(((Ipp64u*)pHashVal)[1]);
@@ -97,7 +117,7 @@ static void sha512_hashOctString(Ipp8u* pMD, void* pHashVal)
    ((Ipp64u*)pMD)[6] = ENDIANNESS64(((Ipp64u*)pHashVal)[6]);
    ((Ipp64u*)pMD)[7] = ENDIANNESS64(((Ipp64u*)pHashVal)[7]);
 }
-static void sha512_384_hashOctString(Ipp8u* pMD, void* pHashVal)
+static void sha512_384_hashOctString (Ipp8u* pMD, void* pHashVal)
 {
    ((Ipp64u*)pMD)[0] = ENDIANNESS64(((Ipp64u*)pHashVal)[0]);
    ((Ipp64u*)pMD)[1] = ENDIANNESS64(((Ipp64u*)pHashVal)[1]);
@@ -106,8 +126,22 @@ static void sha512_384_hashOctString(Ipp8u* pMD, void* pHashVal)
    ((Ipp64u*)pMD)[4] = ENDIANNESS64(((Ipp64u*)pHashVal)[4]);
    ((Ipp64u*)pMD)[5] = ENDIANNESS64(((Ipp64u*)pHashVal)[5]);
 }
+static void sha512_256_hashOctString (Ipp8u* pMD, void* pHashVal)
+{
+   ((Ipp64u*)pMD)[0] = ENDIANNESS64(((Ipp64u*)pHashVal)[0]);
+   ((Ipp64u*)pMD)[1] = ENDIANNESS64(((Ipp64u*)pHashVal)[1]);
+   ((Ipp64u*)pMD)[2] = ENDIANNESS64(((Ipp64u*)pHashVal)[2]);
+   ((Ipp64u*)pMD)[3] = ENDIANNESS64(((Ipp64u*)pHashVal)[3]);
+}
+static void sha512_224_hashOctString (Ipp8u* pMD, void* pHashVal)
+{
+   ((Ipp64u*)pMD)[0] = ENDIANNESS64(((Ipp64u*)pHashVal)[0]);
+   ((Ipp64u*)pMD)[1] = ENDIANNESS64(((Ipp64u*)pHashVal)[1]);
+   ((Ipp64u*)pMD)[2] = ENDIANNESS64(((Ipp64u*)pHashVal)[2]);
+   ((Ipp32u*)pMD)[6] = ENDIANNESS32(((Ipp32u*)pHashVal)[7]);
+}
 
-static void sha512_msgRep(Ipp8u* pDst, Ipp64u lenLo, Ipp64u lenHi)
+static void sha512_msgRep (Ipp8u* pDst, Ipp64u lenLo, Ipp64u lenHi)
 {
    lenHi = LSL64(lenHi,3) | LSR64(lenLo,63-3);
    lenLo = LSL64(lenLo,3);
@@ -115,27 +149,33 @@ static void sha512_msgRep(Ipp8u* pDst, Ipp64u lenLo, Ipp64u lenHi)
    ((Ipp64u*)(pDst))[1] = ENDIANNESS64(lenLo);
 }
 
-//#define   cpFinalizeSHA512       OWNAPI(cpFinalizeSHA512)
-//void      cpFinalizeSHA512(DigestSHA512 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u lenLo, Ipp64u lenHi);
-#define   cpSHA512MessageDigest  OWNAPI(cpSHA512MessageDigest)
-IppStatus cpSHA512MessageDigest(DigestSHA512 hash, const Ipp8u* pMsg, int msgLen, const DigestSHA512 IV);
-#define   InitSHA512             OWNAPI(InitSHA512)
-IppStatus InitSHA512(IppsSHA512State* pState, const DigestSHA512 IV);
+static IppStatus GetSizeSHA512 (int* pSize)
+{
+   /* test pointer */
+   IPP_BAD_PTR1_RET(pSize);
+   *pSize = sizeof(IppsSHA512State);
+   return ippStsNoErr;
+}
 
-static void cpFinalizeSHA512(DigestSHA512 pHash,
-                       const Ipp8u* inpBuffer, int inpLen,
-                             Ipp64u lenLo, Ipp64u lenHi)
+/* #define cpFinalizeSHA512 OWNAPI(cpFinalizeSHA512) */
+   /* IPP_OWN_DECL (void, cpFinalizeSHA512, (DigestSHA512 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u lenLo, Ipp64u lenHi)) */
+#define cpSHA512MessageDigest OWNAPI(cpSHA512MessageDigest)
+   IppStatus cpSHA512MessageDigest (DigestSHA512 hash, const Ipp8u* pMsg, int msgLen, const DigestSHA512 IV);
+#define InitSHA512 OWNAPI(InitSHA512)
+   IppStatus InitSHA512 (IppsSHA512State* pState, const DigestSHA512 IV);
+
+static void cpFinalizeSHA512 (DigestSHA512 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u lenLo, Ipp64u lenHi)
 {
    /* local buffer and it length */
    Ipp8u buffer[MBS_SHA512*2];
-   int bufferLen = inpLen < (MBS_SHA512-(int)MLR_SHA512)? MBS_SHA512 : MBS_SHA512*2;
+   int bufferLen = inpLen < (MBS_SHA512-(int)MLR_SHA512)? MBS_SHA512 : MBS_SHA512*2; 
 
    /* copy rest of message into internal buffer */
    CopyBlock(inpBuffer, buffer, inpLen);
 
    /* padd message */
    buffer[inpLen++] = 0x80;
-   PadBlock(0, buffer+inpLen, bufferLen-inpLen-MLR_SHA512);
+   PadBlock(0, buffer+inpLen, (cpSize)(bufferLen-inpLen-(int)MLR_SHA512));
 
    /* message length representation */
    lenHi = LSL64(lenHi,3) | LSR64(lenLo,63-3);
@@ -144,246 +184,43 @@ static void cpFinalizeSHA512(DigestSHA512 pHash,
    ((Ipp64u*)(buffer+bufferLen))[-1] = ENDIANNESS64(lenLo);
 
    /* copmplete hash computation */
-   UpdateSHA512 (pHash, buffer, bufferLen, sha512_cnt);
+   UpdateSHA512(pHash, buffer, bufferLen, sha512_cnt);
 }
 
-// #endif /* #if !defined(_PCP_SHA512_STUFF_H) */
-
-
-
-IppStatus InitSHA512(IppsSHA512State* pState, const DigestSHA512 IV)
-{
-   /* test state pointer */
-   IPP_BAD_PTR1_RET(pState);
-   pState = (IppsSHA512State*)( IPP_ALIGNED_PTR(pState, SHA512_ALIGNMENT) );
-
-   /* set state ID */
-   HASH_CTX_ID(pState) = idCtxSHA512;
-   /* zeros message length */
-   HASH_LENLO(pState) = 0;
-   HASH_LENHI(pState) = 0;
-   /* message buffer is free */
-   HAHS_BUFFIDX(pState) = 0;
-   /* setup initial digest */
-   hashInit(HASH_VALUE(pState), IV);
-
-   return ippStsNoErr;
-}
-
+#endif /* #if !defined(_PCP_SHA512_STUFF_H) */
 
 /*F*
-//    Name: ippsSHA384Final
+//    Name: ippsHashMethod_SHA384
 //
-// Purpose: Stop message digesting and return digest.
+// Purpose: Return SHA384 method.
 //
-// Returns:                Reason:
-//    ippStsNullPtrErr        pMD == NULL
-//                            pState == NULL
-//    ippStsContextMatchErr   pState->idCtx != idCtxSHA512
-//    ippStsNoErr             no errors
-//
-// Parameters:
-//    pMD         address of the output digest
-//    pState      pointer to the SHA384 state
+// Returns:
+//          Pointer to SHA384 hash-method.
 //
 *F*/
 
-IPPFUN(IppStatus, ippsSHA384Final,(Ipp8u* pMD, IppsSHA384State* pState))
-{
-   /* test state pointer and ID */
-   IPP_BAD_PTR1_RET(pState);
-   pState = (IppsSHA512State*)( IPP_ALIGNED_PTR(pState, SHA512_ALIGNMENT) );
-   IPP_BADARG_RET(idCtxSHA512 !=HASH_CTX_ID(pState), ippStsContextMatchErr);
-
-   /* test digest pointer */
-   IPP_BAD_PTR1_RET(pMD);
-
-   cpFinalizeSHA512(HASH_VALUE(pState),
-                    HASH_BUFF(pState), HAHS_BUFFIDX(pState),
-                    HASH_LENLO(pState), HASH_LENHI(pState));
-   /* convert hash into big endian */
-   ((Ipp64u*)pMD)[0] = ENDIANNESS64(HASH_VALUE(pState)[0]);
-   ((Ipp64u*)pMD)[1] = ENDIANNESS64(HASH_VALUE(pState)[1]);
-   ((Ipp64u*)pMD)[2] = ENDIANNESS64(HASH_VALUE(pState)[2]);
-   ((Ipp64u*)pMD)[3] = ENDIANNESS64(HASH_VALUE(pState)[3]);
-   ((Ipp64u*)pMD)[4] = ENDIANNESS64(HASH_VALUE(pState)[4]);
-   ((Ipp64u*)pMD)[5] = ENDIANNESS64(HASH_VALUE(pState)[5]);
-
-   /* re-init hash value */
-   HAHS_BUFFIDX(pState) = 0;
-   HASH_LENLO(pState) = 0;
-   HASH_LENHI(pState) = 0;
-   sha512_384_hashInit(HASH_VALUE(pState));
-
-   return ippStsNoErr;
-}
-
-
-/*F*
-//    Name: ippsSHA512Update
-//
-// Purpose: Updates intermadiate digest based on input stream.
-//
-// Returns:                Reason:
-//    ippStsNullPtrErr        pSrc == NULL
-//                            pState == NULL
-//    ippStsContextMatchErr   pState->idCtx != idCtxSHA512
-//    ippStsLengthErr         len <0
-//    ippStsNoErr             no errors
-//
-// Parameters:
-//    pSrc        pointer to the input stream
-//    len         input stream length
-//    pState      pointer to the SHA512 state
-//
-*F*/
-IPPFUN(IppStatus, ippsSHA512Update,(const Ipp8u* pSrc, int len, IppsSHA512State* pState))
-{
-   /* test state pointer and ID */
-   IPP_BAD_PTR1_RET(pState);
-   /* use aligned context */
-   pState = (IppsSHA512State*)( IPP_ALIGNED_PTR(pState, SHA512_ALIGNMENT) );
-   IPP_BADARG_RET(idCtxSHA512 !=HASH_CTX_ID(pState), ippStsContextMatchErr);
-
-   /* test input length */
-   IPP_BADARG_RET((len<0), ippStsLengthErr);
-   /* test source pointer */
-   IPP_BADARG_RET((len && !pSrc), ippStsNullPtrErr);
-
-   /*
-   // handle non empty message
-   */
-   if(len) {
-      int procLen;
-
-      int idx = HAHS_BUFFIDX(pState);
-      Ipp8u* pBuffer = HASH_BUFF(pState);
-      Ipp64u lenLo = HASH_LENLO(pState) +len;
-      Ipp64u lenHi = HASH_LENHI(pState);
-      if(lenLo < HASH_LENLO(pState)) lenHi++;
-
-      /* if non empty internal buffer filling */
-      if(idx) {
-         /* copy from input stream to the internal buffer as match as possible */
-         procLen = IPP_MIN(len, (MBS_SHA512-idx));
-         CopyBlock(pSrc, pBuffer+idx, procLen);
-
-         /* update message pointer and length */
-         pSrc += procLen;
-         len  -= procLen;
-         idx  += procLen;
-
-         /* update digest if buffer full */
-         if(MBS_SHA512 == idx) {
-            UpdateSHA512(HASH_VALUE(pState), pBuffer, MBS_SHA512, sha512_cnt);
-            idx = 0;
-         }
-      }
-
-      /* main message part processing */
-      procLen = len & ~(MBS_SHA512-1);
-      if(procLen) {
-         UpdateSHA512(HASH_VALUE(pState), pSrc, procLen, sha512_cnt);
-         pSrc += procLen;
-         len  -= procLen;
-      }
-
-      /* store rest of message into the internal buffer */
-      if(len) {
-         CopyBlock(pSrc, pBuffer, len);
-         idx += len;
-      }
-
-      /* update length of processed message */
-      HASH_LENLO(pState) = lenLo;
-      HASH_LENHI(pState) = lenHi;
-      HAHS_BUFFIDX(pState) = idx;
-   }
-
-   return ippStsNoErr;
-}
-
-/*F*
-//    Name: ippsSHA384Init
-//
-// Purpose: Init SHA384
-//
-// Returns:                Reason:
-//    ippStsNullPtrErr        pState == NULL
-//    ippStsNoErr             no errors
-//
-// Parameters:
-//    pState      pointer to the SHA384 state
-//
-*F*/
-
-IPPFUN(IppStatus, ippsSHA384Init,(IppsSHA384State* pState))
-{
-   return InitSHA512(pState, sha512_384_iv);
-}
-
-/*F*
-//    Name: ippsSHA384Update
-//
-// Purpose: Updates intermadiate digest based on input stream.
-//
-// Returns:                Reason:
-//    ippStsNullPtrErr        pSrc == NULL
-//                            pState == NULL
-//    ippStsContextMatchErr   pState->idCtx != idCtxSHA512
-//    ippStsLengthErr         len <0
-//    ippStsNoErr             no errors
-//
-// Parameters:
-//    pSrc        pointer to the input stream
-//    len         input stream length
-//    pState      pointer to the SHA384 state
-//
-*F*/
-
-IPPFUN(IppStatus, ippsSHA384Update,(const Ipp8u* pSrc, int len, IppsSHA384State* pState))
-{
-   return ippsSHA512Update(pSrc, len, pState);
-}
-
-
-/*
-// available SHA384 methods
-*/
 IPPFUN( const IppsHashMethod*, ippsHashMethod_SHA384, (void) )
 {
    static IppsHashMethod method = {
       ippHashAlg_SHA384,
       IPP_SHA384_DIGEST_BITSIZE/8,
-      MBS_SHA384,
-      MLR_SHA384,
-      sha512_384_hashInit,
-      sha512_hashUpdate,
-      sha512_384_hashOctString,
-      sha512_msgRep
-   };
-   return &method;
-}
-
-/*
-// available SHA512 methods
-*/
-IPPFUN( const IppsHashMethod*, ippsHashMethod_SHA512, (void) )
-{
-   static IppsHashMethod method = {
-      ippHashAlg_SHA512,
-      IPP_SHA384_DIGEST_BITSIZE/8,
       MBS_SHA512,
       MLR_SHA512,
-      sha512_hashInit,
-      sha512_hashUpdate,
-      sha512_hashOctString,
-      sha512_msgRep
+      0,
+      0,
+      0,
+      0
    };
+
+   method.hashInit   = sha512_384_hashInit;
+   method.hashUpdate = sha512_hashUpdate;
+   method.hashOctStr = sha512_384_hashOctString;
+   method.msgLenRep  = sha512_msgRep;
+
    return &method;
 }
 
-#pragma message("IPP_ALG_HASH_SHA512 enabled")
+#if defined(_ENABLE_ALG_SHA512_) || defined(_ENABLE_ALG_SHA384_) || defined(_ENABLE_ALG_SHA512_224_) || defined(_ENABLE_ALG_SHA512_256_)
 
 #if !((_IPP==_IPP_W7) || (_IPP==_IPP_T7) || \
       (_IPP==_IPP_V8) || (_IPP==_IPP_P8) || \
@@ -391,6 +228,7 @@ IPPFUN( const IppsHashMethod*, ippsHashMethod_SHA512, (void) )
       (_IPP32E==_IPP32E_M7) || \
       (_IPP32E==_IPP32E_U8) || (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E==_IPP32E_N8) || (_IPP32E>=_IPP32E_E9))
+
 /*
 // SHA512 Specific Macros (reference proposal 256-384-512)
 //
@@ -429,16 +267,27 @@ IPPFUN( const IppsHashMethod*, ippsHashMethod_SHA512, (void) )
    (A) = _T1+_T2; \
 }
 
-
+/*F*
+//    Name: UpdateSHA512
+//
+// Purpose: Update internal hash according to input message stream.
+//
+// Parameters:
+//    uniHash  pointer to in/out hash
+//    mblk     pointer to message stream
+//    mlen     message stream length (multiple by message block size)
+//    uniParam pointer to the optional parameter
+//
+*F*/
 #if defined(_ALG_SHA512_COMPACT_)
-#pragma message("SHA512 compact")
 
-void UpdateSHA512Compact(void* uniHash, const Ipp8u* mblk, int mlen, const void* uniPraram)
+void UpdateSHA512 (void* uniHash, const Ipp8u* mblk, int mlen, const void* uniPraram)
 {
    Ipp32u* data = (Ipp32u*)mblk;
 
    Ipp64u* digest = (Ipp64u*)uniHash;
    Ipp64u* SHA512_cnt_loc = (Ipp64u*)uniPraram;
+
 
    for(; mlen>=MBS_SHA512; data += MBS_SHA512/sizeof(Ipp32u), mlen -= MBS_SHA512) {
       int t;
@@ -489,9 +338,9 @@ void UpdateSHA512Compact(void* uniHash, const Ipp8u* mblk, int mlen, const void*
       }
    }
 }
-#endif
 
-void UpdateSHA512Normal(void* uniHash, const Ipp8u* mblk, int mlen, const void* uniPraram)
+#else
+void UpdateSHA512 (void* uniHash, const Ipp8u* mblk, int mlen, const void* uniPraram)
 {
    Ipp32u* data = (Ipp32u*)mblk;
 
@@ -548,39 +397,7 @@ void UpdateSHA512Normal(void* uniHash, const Ipp8u* mblk, int mlen, const void* 
       digest[7] += v[7];
    }
 }
-
-/*F*
-//    Name: UpdateSHA512
-//
-// Purpose: Update internal hash according to input message stream.
-//
-// Parameters:
-//    uniHash  pointer to in/out hash
-//    mblk     pointer to message stream
-//    mlen     message stream length (multiple by message block size)
-//    uniParam pointer to the optional parameter
-//
-*F*/
-
-void UpdateSHA512(void* uniHash, const Ipp8u* mblk, int mlen, const void* uniPraram)
-{
-#if defined(_SLIMBOOT_OPT)
-   #if (FixedPcdGet32 (PcdCryptoShaOptMask) & IPP_CRYPTO_SHA384_G9)
-      UpdateSHA512G9 (uniHash, mblk, mlen, uniPraram);
-   #elif (FixedPcdGet32 (PcdCryptoShaOptMask) & IPP_CRYPTO_SHA384_W7)
-      UpdateSHA512W7 (uniHash, mblk, mlen, uniPraram);
-   #else
-      UpdateSHA512Compact (uniHash, mblk, mlen, uniPraram);
-   #endif
-#else
-
-#if  defined(_ALG_SHA512_COMPACT_)
-  UpdateSHA512Compact (uniHash, mblk, mlen, uniPraram);
-#else
-  UpdateSHA512Normal (uniHash, mblk, mlen, uniPraram);
 #endif
 
-#endif //_SLIMBOOT_OPT
-}
-
 #endif
+#endif /* IPP_ALG_HASH_SHA512 */

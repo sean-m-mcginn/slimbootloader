@@ -1,25 +1,26 @@
 /*******************************************************************************
-* Copyright 2012-2020 Intel Corporation
+* Copyright (C) 2012 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
-/*
+/* 
 //  Purpose:
 //     Intel(R) Integrated Performance Primitives.
 //     Internal Unsigned internal arithmetic
-//
-//
+// 
+// 
 */
 
 #if !defined(_CP_BNU_ARITH_H)
@@ -27,29 +28,21 @@
 
 #include "pcpbnuimpl.h"
 #include "pcpbnu32arith.h"
-#include "pcpmulbnukara.h"
 
-#define     cpAdd_BNU OWNAPI(cpAdd_BNU)
-BNU_CHUNK_T cpAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns);
-#define     cpSub_BNU OWNAPI(cpSub_BNU)
-BNU_CHUNK_T cpSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns);
-#define     cpInc_BNU OWNAPI(cpInc_BNU)
-BNU_CHUNK_T cpInc_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val);
-#define     cpDec_BNU OWNAPI(cpDec_BNU)
-BNU_CHUNK_T cpDec_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val);
-
-#define     cpAddMulDgt_BNU OWNAPI(cpAddMulDgt_BNU)
-BNU_CHUNK_T cpAddMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val);
-
-
-#define     cpMulAdc_BNU_school OWNAPI(cpMulAdc_BNU_school)
-BNU_CHUNK_T cpMulAdc_BNU_school(BNU_CHUNK_T* pR,
-                         const BNU_CHUNK_T* pA, cpSize nsA,
-                         const BNU_CHUNK_T* pB, cpSize nsB);
-#define     cpMulAdx_BNU_school OWNAPI(cpMulAdx_BNU_school)
-BNU_CHUNK_T cpMulAdx_BNU_school(BNU_CHUNK_T* pR,
-                         const BNU_CHUNK_T* pA, cpSize nsA,
-                         const BNU_CHUNK_T* pB, cpSize nsB);
+#define cpAdd_BNU OWNAPI(cpAdd_BNU)
+   BNU_CHUNK_T cpAdd_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns);
+#define cpSub_BNU OWNAPI(cpSub_BNU)
+   BNU_CHUNK_T cpSub_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns);
+#define cpInc_BNU OWNAPI(cpInc_BNU)
+   BNU_CHUNK_T cpInc_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val);
+#define cpDec_BNU OWNAPI(cpDec_BNU)
+   BNU_CHUNK_T cpDec_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val);
+#define cpAddMulDgt_BNU OWNAPI(cpAddMulDgt_BNU)
+   BNU_CHUNK_T cpAddMulDgt_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val);
+#define cpMulAdc_BNU_school OWNAPI(cpMulAdc_BNU_school)
+   BNU_CHUNK_T cpMulAdc_BNU_school (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA, const BNU_CHUNK_T* pB, cpSize nsB);
+#define cpMulAdx_BNU_school OWNAPI(cpMulAdx_BNU_school)
+   BNU_CHUNK_T cpMulAdx_BNU_school (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA, const BNU_CHUNK_T* pB, cpSize nsB);
 
 /*F*
 //    Name: cpMul_BNU_school
@@ -83,11 +76,10 @@ __INLINE BNU_CHUNK_T cpMul_BNU_school(BNU_CHUNK_T* pR,
 }
 
 
-#define     cpSqrAdc_BNU_school OWNAPI(cpSqrAdc_BNU_school)
-BNU_CHUNK_T cpSqrAdc_BNU_school(BNU_CHUNK_T * pR, const BNU_CHUNK_T * pA, cpSize nsA);
-
-#define     cpSqrAdx_BNU_school OWNAPI(cpSqrAdx_BNU_school)
-BNU_CHUNK_T cpSqrAdx_BNU_school(BNU_CHUNK_T * pR, const BNU_CHUNK_T * pA, cpSize nsA);
+#define cpSqrAdc_BNU_school OWNAPI(cpSqrAdc_BNU_school)
+   BNU_CHUNK_T cpSqrAdc_BNU_school (BNU_CHUNK_T * pR, const BNU_CHUNK_T * pA, cpSize nsA);
+#define cpSqrAdx_BNU_school OWNAPI(cpSqrAdx_BNU_school)
+   BNU_CHUNK_T cpSqrAdx_BNU_school (BNU_CHUNK_T * pR, const BNU_CHUNK_T * pA, cpSize nsA);
 
 /*F*
 //    Name: cpSqr_BNU_school
@@ -115,15 +107,10 @@ __INLINE BNU_CHUNK_T cpSqr_BNU_school(BNU_CHUNK_T * pR, const BNU_CHUNK_T * pA, 
 #endif
 }
 
-#define     cpGcd_BNU OWNAPI(cpGcd_BNU)
-BNU_CHUNK_T cpGcd_BNU(BNU_CHUNK_T a, BNU_CHUNK_T b);
-
+#define cpGcd_BNU OWNAPI(cpGcd_BNU)
+   BNU_CHUNK_T cpGcd_BNU (BNU_CHUNK_T a, BNU_CHUNK_T b);
 #define cpModInv_BNU OWNAPI(cpModInv_BNU)
-int     cpModInv_BNU(BNU_CHUNK_T* pInv,
-               const BNU_CHUNK_T* pA, cpSize nsA,
-               const BNU_CHUNK_T* pM, cpSize nsM,
-                     BNU_CHUNK_T* bufInv, BNU_CHUNK_T* bufA, BNU_CHUNK_T* bufM);
-
+   int cpModInv_BNU (BNU_CHUNK_T* pInv, const BNU_CHUNK_T* pA, cpSize nsA, const BNU_CHUNK_T* pM, cpSize nsM, BNU_CHUNK_T* bufInv, BNU_CHUNK_T* bufA, BNU_CHUNK_T* bufM);
 
 /*
 // multiplication/squaring wrappers

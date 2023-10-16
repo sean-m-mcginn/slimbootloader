@@ -22,13 +22,24 @@
 #include "gsmodstuff.h"
 #include "pcptool.h"
 
-/* convert bitsize nbits into  the number of BNU_CHUNK_T */
-#define BITS_BNU_IPP32U(nbits) (((nbits)+31)/32)
+/*F*
+// Name: gsModEngineGetSize
+//
+// Purpose: Specifies size of size of ModEngine context (Montgomery).
+//
+// Returns:                Reason:
+//      ippStsLengthErr     modulusBitSize < 1
+//                          numpe < MOD_ENGINE_MIN_POOL_SIZE
+//      ippStsNoErr         no errors
+//
+// Parameters:
+//      numpe           length of pool
+//      modulusBitSize  max modulus length (in bits)
+//      pSize           pointer to size
+//
+*F*/
 
-/*
-// size of ModEngine context (Montgomery)
-*/
-IppStatus gsModEngineGetSize(int modulusBitSize, int numpe, int* pSize)
+IppStatus gsModEngineGetSize (int modulusBitSize, int numpe, int* pSize)
 {
    int modLen  = BITS_BNU_CHUNK(modulusBitSize);
    int pelmLen = BITS_BNU_CHUNK(modulusBitSize);
@@ -37,11 +48,11 @@ IppStatus gsModEngineGetSize(int modulusBitSize, int numpe, int* pSize)
    IPP_BADARG_RET(numpe<MOD_ENGINE_MIN_POOL_SIZE, ippStsLengthErr);
 
    /* allocates mimimal necessary to Montgomery based methods */
-   *pSize = sizeof(gsModEngine)
-           + modLen*sizeof(BNU_CHUNK_T)         /* modulus  */
-           + modLen*sizeof(BNU_CHUNK_T)         /* mont_R   */
-           + modLen*sizeof(BNU_CHUNK_T)         /* mont_R^2 */
-           + pelmLen*sizeof(BNU_CHUNK_T)*numpe; /* buffers  */
+   *pSize = (Ipp32s)sizeof(gsModEngine)
+           + modLen*(Ipp32s)(sizeof(BNU_CHUNK_T))        /* modulus  */
+           + modLen*(Ipp32s)(sizeof(BNU_CHUNK_T))         /* mont_R   */
+           + modLen*(Ipp32s)(sizeof(BNU_CHUNK_T))         /* mont_R^2 */
+           + pelmLen*(Ipp32s)(sizeof(BNU_CHUNK_T))*numpe; /* buffers  */
 
    return ippStsNoErr;
 }
@@ -49,7 +60,7 @@ IppStatus gsModEngineGetSize(int modulusBitSize, int numpe, int* pSize)
 /*
 // montfomery factor k0 = -((modulus^-1 mod B) %B)
 */
-BNU_CHUNK_T gsMontFactor(BNU_CHUNK_T m0)
+BNU_CHUNK_T gsMontFactor (BNU_CHUNK_T m0)
 {
    BNU_CHUNK_T y = 1;
    BNU_CHUNK_T x = 2;
@@ -66,14 +77,34 @@ BNU_CHUNK_T gsMontFactor(BNU_CHUNK_T m0)
    return 0-y;
 }
 
-/*
-// initialization of the ModEngine context (Montgomery)
-*/
-IppStatus gsModEngineInit(gsModEngine* pME, const Ipp32u* pModulus, int modulusBitSize, int numpe, const gsModMethod* method)
+/*F*
+// Name: gsModEngineInit
+//
+// Purpose: Initialization of the ModEngine context (Montgomery)
+//
+// Returns:                Reason:
+//      ippStsLengthErr     modulusBitSize < 1
+//                          numpe < MOD_ENGINE_MIN_POOL_SIZE
+//      ippStsBadModulusErr (pModulus) && (pModulus[0] & 1) == 0
+//      ippStsNoErr         no errors
+//
+// Parameters:
+//      pME             pointer to ModEngine
+//      pModulus        modulus
+//      numpe           length of pool
+//      modulusBitSize  max modulus length (in bits)
+//      method          ModMethod
+//
+*F*/
+
+IppStatus gsModEngineInit (gsModEngine* pME, const Ipp32u* pModulus, int modulusBitSize, int numpe, const gsModMethod* method)
 {
    IPP_BADARG_RET(modulusBitSize<1, ippStsLengthErr);
    IPP_BADARG_RET((pModulus) && (pModulus[0] & 1) == 0, ippStsBadModulusErr);
    IPP_BADARG_RET(numpe<MOD_ENGINE_MIN_POOL_SIZE, ippStsLengthErr);
+
+/* convert bitsize nbits into  the number of BNU_CHUNK_T */
+#define BITS_BNU_IPP32U(nbits) (((nbits)+31)/32)
 
    {
       int pelmLen = BITS_BNU_CHUNK(modulusBitSize);
@@ -91,9 +122,9 @@ IppStatus gsModEngineInit(gsModEngine* pME, const Ipp32u* pModulus, int modulusB
       MOD_PELEN(pME)    = pelmLen;
       MOD_METHOD(pME)   = method;
       MOD_MODULUS(pME)  = (BNU_CHUNK_T*)(ptr += sizeof(gsModEngine));
-      MOD_MNT_R(pME)    = (BNU_CHUNK_T*)(ptr += modLen*sizeof(BNU_CHUNK_T));
-      MOD_MNT_R2(pME)   = (BNU_CHUNK_T*)(ptr += modLen*sizeof(BNU_CHUNK_T));
-      MOD_POOL_BUF(pME) = (BNU_CHUNK_T*)(ptr += modLen*sizeof(BNU_CHUNK_T));
+      MOD_MNT_R(pME)    = (BNU_CHUNK_T*)(ptr += modLen*(Ipp32s)sizeof(BNU_CHUNK_T));
+      MOD_MNT_R2(pME)   = (BNU_CHUNK_T*)(ptr += modLen*(Ipp32s)sizeof(BNU_CHUNK_T));
+      MOD_POOL_BUF(pME) = (BNU_CHUNK_T*)(ptr += modLen*(Ipp32s)sizeof(BNU_CHUNK_T));
       MOD_MAXPOOL(pME)  = numpe;
       MOD_USEDPOOL(pME) = 0;
 
@@ -116,35 +147,12 @@ IppStatus gsModEngineInit(gsModEngine* pME, const Ipp32u* pModulus, int modulusB
       }
    }
 
+#undef BITS_BNU_IPP32U
+
    return ippStsNoErr;
 }
 
-/*
-// pool management methods
-*/
-#if 0
-BNU_CHUNK_T* gsModPoolAlloc(gsModEngine* pME, int poolReq)
-{
-   BNU_CHUNK_T* pPool = MOD_BUFFER(pME, pME->poolLenUsed);
-
-   if(pME->poolLenUsed + poolReq > pME->poolLen)
-      pPool = NULL;
-   else
-      pME->poolLenUsed += poolReq;
-
-   return pPool;
-}
-#endif
-#if 0
-void gsModPoolFree(gsModEngine* pME, int poolReq)
-{
-   if(pME->poolLenUsed < poolReq)
-      poolReq = pME->poolLenUsed;
-   pME->poolLenUsed -= poolReq;
-}
-#endif
-
-BNU_CHUNK_T*   gsModGetPool(gsModEngine* pME)
+BNU_CHUNK_T* gsModGetPool (gsModEngine* pME)
 {
    BNU_CHUNK_T*
    pPool = (pME->poolLenUsed >= pME->poolLen)? NULL : MOD_BUFFER(pME, pME->poolLenUsed);
@@ -154,32 +162,31 @@ BNU_CHUNK_T*   gsModGetPool(gsModEngine* pME)
 /*
 // Pack/Unpack methods
 */
-
-void gsPackModEngineCtx(const gsModEngine* pCtx, Ipp8u* pBuffer)
+void gsPackModEngineCtx (const gsModEngine* pCtx, Ipp8u* pBuffer)
 {
-   gsModEngine* pAlignedBuffer = (gsModEngine*)pBuffer;
+   gsModEngine* pB = (gsModEngine*)pBuffer;
 
    /* max modulus length */
    int modSize = MOD_LEN(pCtx);
    /* size of context (bytes) without cube and pool buffers */
-   int ctxSize = sizeof(gsModEngine)
-                +sizeof(BNU_CHUNK_T)*(modSize*3);
+   int ctxSize = (Ipp32s)sizeof(gsModEngine)
+                +(Ipp32s)sizeof(BNU_CHUNK_T)*(modSize*3);
 
-   CopyBlock(pCtx, pAlignedBuffer, ctxSize);
-   MOD_MODULUS(pAlignedBuffer) = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(MOD_MODULUS(pCtx))-IPP_UINT_PTR(pCtx));
-   MOD_MNT_R(pAlignedBuffer)   = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(MOD_MNT_R(pCtx))-IPP_UINT_PTR(pCtx));
-   MOD_MNT_R2(pAlignedBuffer)  = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(MOD_MNT_R2(pCtx))-IPP_UINT_PTR(pCtx));
+   CopyBlock(pCtx, pB, ctxSize);
+   MOD_MODULUS(pB) = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(MOD_MODULUS(pCtx))-IPP_UINT_PTR(pCtx));
+   MOD_MNT_R(pB)   = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(MOD_MNT_R(pCtx))-IPP_UINT_PTR(pCtx));
+   MOD_MNT_R2(pB)  = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(MOD_MNT_R2(pCtx))-IPP_UINT_PTR(pCtx));
 }
 
-void gsUnpackModEngineCtx(const Ipp8u* pBuffer, gsModEngine* pCtx)
+void gsUnpackModEngineCtx (const Ipp8u* pBuffer, gsModEngine* pCtx)
 {
    gsModEngine* pAlignedBuffer = (gsModEngine*)pBuffer;
 
    /* max modulus length */
    int modSize = MOD_LEN(pAlignedBuffer);
    /* size of context (bytes) without cube and pool buffers */
-   int ctxSize = sizeof(gsModEngine)
-                +sizeof(BNU_CHUNK_T)*(modSize*3);
+   int ctxSize = (Ipp32s)sizeof(gsModEngine)
+                +(Ipp32s)sizeof(BNU_CHUNK_T)*(modSize*3);
 
    CopyBlock(pAlignedBuffer, pCtx, ctxSize);
    MOD_MODULUS(pCtx)  = (BNU_CHUNK_T*)((Ipp8u*)pCtx + IPP_UINT_PTR(MOD_MODULUS(pAlignedBuffer)));

@@ -37,9 +37,21 @@
 #include "pcpbnu32misc.h"
 #include "pcpbnu32arith.h"
 
-/*
-// BNU32 addition
-*/
+/*F*
+//    Name: cpSub_BNU32
+//
+// Purpose: addition BNU32.
+//
+// Returns:
+//    carry
+//
+// Parameters:
+//    pA    source
+//    pB    source
+//    ns    size
+//    pR    result
+//
+*F*/
 Ipp32u cpAdd_BNU32(Ipp32u* pR, const Ipp32u* pA, const Ipp32u* pB, cpSize ns)
 {
    Ipp32u carry = 0;
@@ -52,9 +64,22 @@ Ipp32u cpAdd_BNU32(Ipp32u* pR, const Ipp32u* pA, const Ipp32u* pB, cpSize ns)
    return carry;
 }
 
-/*
-// BNU32 subtraction
-*/
+
+/*F*
+//    Name: cpSub_BNU32
+//
+// Purpose: substract BNU32.
+//
+// Returns:
+//    borrow
+//
+// Parameters:
+//    pA    source
+//    pB    source
+//    ns    size
+//    pR    result
+//
+*F*/
 Ipp32u cpSub_BNU32(Ipp32u* pR, const Ipp32u* pA, const Ipp32u* pB, cpSize ns)
 {
    Ipp32u borrow = 0;
@@ -67,9 +92,22 @@ Ipp32u cpSub_BNU32(Ipp32u* pR, const Ipp32u* pA, const Ipp32u* pB, cpSize ns)
    return borrow;
 }
 
-/*
-// BNU32 increment
-*/
+
+/*F*
+//    Name: cpInc_BNU32
+//
+// Purpose: BNU32 increment.
+//
+// Returns:
+//    carry
+//
+// Parameters:
+//    pA    source
+//    pR    result
+//    ns    size
+//    v     borrow
+//
+*F*/
 Ipp32u cpInc_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize ns, Ipp32u v)
 {
    Ipp32u carry = v;
@@ -82,9 +120,21 @@ Ipp32u cpInc_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize ns, Ipp32u v)
    return carry;
 }
 
-/*
-// BNU32 decrement
-*/
+/*F*
+//    Name: cpDec_BNU32
+//
+// Purpose: BNU32 decrement.
+//
+// Returns:
+//    borrow
+//
+// Parameters:
+//    pA    source
+//    pR    result
+//    ns    size
+//    v     borrow
+//
+*F*/
 Ipp32u cpDec_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize ns, Ipp32u v)
 {
    Ipp32u borrow = v;
@@ -97,16 +147,28 @@ Ipp32u cpDec_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize ns, Ipp32u v)
    return borrow;
 }
 
-/*
-// BNU32 mul_by_digit
-*/
+/*F*
+//    Name: cpMulDgt_BNU32
+//
+// Purpose: multiply BNU32 digit.
+//
+// Returns:
+//    carry
+//
+// Parameters:
+//    pA    source
+//    nsA   size of A
+//    val   carry
+//    pR    result
+//
+*F*/
 Ipp32u cpMulDgt_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize nsA, Ipp32u val)
 {
    Ipp32u carry = 0;
    cpSize i;
    for(i=0; i<nsA; i++) {
 #ifdef _SLIMBOOT_OPT
-      Ipp64u t = (Ipp64u)MultU64x32(pA[i], val) + carry;
+      Ipp64u t = MultU64x32((Ipp64u)val, (Ipp64u)pA[i]) + carry;
 #else
       Ipp64u t = (Ipp64u)val * (Ipp64u)pA[i] + carry;
 #endif
@@ -116,9 +178,22 @@ Ipp32u cpMulDgt_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize nsA, Ipp32u val)
     return carry;
 }
 
-/*
-// BNU32 mul_by_digit_subtract
-*/
+/*F*
+//    Name: cpMulDgt_BNU32
+//
+// Purpose: multiply and subtract BNU32.
+//
+// Returns:
+//    carry
+//
+// Parameters:
+//    pA    source
+//    nsA   size of A
+//    val   digit to mul
+//    pR    result
+//
+*F*/
+
 #if !((_IPP32E==_IPP32E_M7) || \
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
@@ -129,7 +204,7 @@ Ipp32u cpSubMulDgt_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize nsA, Ipp32u val)
    Ipp32u carry = 0;
    for(; nsA>0; nsA--) {
 #ifdef _SLIMBOOT_OPT
-      Ipp64u r = (Ipp64u)*pR - MultU64x32(*pA++ , val) - carry;
+      Ipp64u r = (Ipp64u)*pR - MultU64x32((Ipp64u)(*pA++), val) - carry;
 #else
       Ipp64u r = (Ipp64u)*pR - (Ipp64u)(*pA++) * val - carry;
 #endif
@@ -140,20 +215,33 @@ Ipp32u cpSubMulDgt_BNU32(Ipp32u* pR, const Ipp32u* pA, cpSize nsA, Ipp32u val)
 }
 #endif
 
-/*
-// BNU32 division
-*/
+/*F*
+//    Name: cpDiv_BNU32
+//
+// Purpose: BNU32 division.
+//
+// Returns:
+//    size of result 
+//
+// Parameters:
+//    pX     source X
+//    pY     source Y
+//    pQ     source quotient
+//    sizeQ  pointer to max size of Q
+//    sizeX  size of A
+//    sizeY  size of B
+//
+*F*/
+
 #if !((_IPP32E==_IPP32E_M7) || \
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
       (_IPP32E==_IPP32E_N8))
-int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
-                 Ipp32u* pX, cpSize sizeX,
-                 Ipp32u* pY, cpSize sizeY)
+int cpDiv_BNU32 (Ipp32u* pQ, cpSize* sizeQ, Ipp32u* pX, cpSize sizeX, Ipp32u* pY, cpSize sizeY)
 {
-   FIX_BNU(pY,sizeY);
-   FIX_BNU(pX,sizeX);
+   FIX_BNU32(pY,sizeY);
+   FIX_BNU32(pX,sizeX);
 
    /* special case */
    if(sizeX < sizeY) {
@@ -173,11 +261,11 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
       for(i=(int)sizeX-1; i>=0; i--) {
          Ipp64u tmp = IPP_MAKEDWORD(pX[i],r);
 #ifdef _SLIMBOOT_OPT
-         Ipp32u q = IPP_LODWORD(DivU64x32 (tmp , pY[0]));
-         r = IPP_LODWORD(tmp - MultU64x32(pY[0], q));
+            Ipp32u q = IPP_LODWORD(DivU64x32 (tmp , pY[0]));
+            r = IPP_LODWORD(tmp - MultU64x32(pY[0], q));
 #else
-         Ipp32u q = IPP_LODWORD(tmp / pY[0]);
-         r = IPP_LODWORD(tmp - q*pY[0]);
+            Ipp32u q = IPP_LODWORD(tmp / pY[0]);
+            r = IPP_LODWORD(tmp - q*pY[0]);
 #endif
          if(pQ) pQ[i] = q;
       }
@@ -185,7 +273,7 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
       pX[0] = r;
 
       if(pQ) {
-         FIX_BNU(pQ,sizeX);
+         FIX_BNU32(pQ,sizeX);
          *sizeQ = sizeX;
       }
 
@@ -201,7 +289,7 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
 
       /* normalization */
       pX[sizeX] = 0;
-      if(nlz > 0 && nlz < 32) {
+      if(nlz) {
          cpSize ni;
 
          pX[sizeX] = pX[sizeX-1] >> (32-nlz);
@@ -227,21 +315,20 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
             /* estimate digit of quotient */
             Ipp64u tmp = IPP_MAKEDWORD(pX[i+sizeY-1], pX[i+sizeY]);
 #ifdef _SLIMBOOT_OPT
-            Ipp64u q = DivU64x32 (tmp, yHi);
-            Ipp64u r = tmp - MultU64x32 (q , yHi);
+               Ipp64u q = DivU64x32 (tmp, yHi);
+               Ipp64u r = tmp - MultU64x32 (q , yHi);
 #else
-            Ipp64u q = tmp / yHi;
-            Ipp64u r = tmp - q*yHi;
+               Ipp64u q = tmp / yHi;
+               Ipp64u r = tmp - q*yHi;
 #endif
-
 
             /* tune estimation above */
-            //for(; (q>=CONST_64(0x100000000)) || (Ipp64u)q*pY[sizeY-2] > MAKEDWORD(pX[i+sizeY-2],r); ) {
-#ifdef _SLIMBOOT_OPT
+            //for(; (q>=CONST_64(0x100000000)) || (Ipp64u)q*pY[sizeY-2] > IPP_MAKEDWORD(pX[i+sizeY-2],r); ) {
+            #ifdef _SLIMBOOT_OPT
             for(; IPP_HIDWORD(q) || (Ipp64u)MultU64x32 (q, pY[sizeY-2]) > IPP_MAKEDWORD(pX[i+sizeY-2],r); ) {
-#else
-            for(; IPP_HIDWORD(q) || (Ipp64u)q*pY[sizeY-2] > IPP_MAKEDWORD(pX[i+sizeY-2],r); ) {
-#endif
+            #else
+               for(; IPP_HIDWORD(q) || (Ipp64u)q*pY[sizeY-2] > IPP_MAKEDWORD(pX[i+sizeY-2],r); ) {
+            #endif
                q -= 1;
                r += yHi;
                if( IPP_HIDWORD(r) )
@@ -273,10 +360,10 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
          pY[sizeY-1] >>= nlz;
       }
 
-      FIX_BNU(pX,sizeX);
+      FIX_BNU32(pX,sizeX);
 
       if(pQ) {
-         FIX_BNU(pQ,qs);
+         FIX_BNU32(pQ,qs);
          *sizeQ = qs;
       }
 
@@ -284,20 +371,3 @@ int cpDiv_BNU32(Ipp32u* pQ, cpSize* sizeQ,
    }
 }
 #endif
-
-#define FE_MUL(R,A,B,LEN) { \
-   int aidx, bidx; \
-   \
-   for(aidx=0; aidx<(LEN); aidx++) (R)[aidx] = 0; \
-   \
-   for(bidx=0; bidx<(LEN); bidx++) { \
-      Ipp64u b = (B)[bidx]; \
-      Ipp32u c = 0; \
-      for(aidx=0; aidx<(LEN); aidx++) { \
-         Ipp64u t = (R)[bidx+aidx] + (A)[aidx] * b + c; \
-         (R)[bidx+aidx] = IPP_LODWORD(t); \
-         c = IPP_HIDWORD(t); \
-      } \
-      (R)[bidx+aidx] = c; \
-   } \
-}

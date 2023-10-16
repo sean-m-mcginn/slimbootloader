@@ -50,50 +50,78 @@
 #include "pcpbn.h"
 #include "pcptool.h"
 
+/*F*
+//    Name: cpBN_OneRef
+//
+// Purpose: BN(1) and reference
+//
+//  Return: 
+//      BigNum = 1
+*F*/
+
 /* BN(1) and reference */
-static IppsBigNumStateChunk cpChunk_BN1 = {
-   {
-      idCtxBigNum,
-      ippBigNumPOS,
-      1,1,
-      &cpChunk_BN1.value,&cpChunk_BN1.temporary
-   },
-   1,0
-};
+IppsBigNumState* cpBN_OneRef (void)
+{
+   static IppsBigNumStateChunk cpChunk_BN1 = {
+      {
+         idCtxUnknown,
+         ippBigNumPOS,
+         1,1,
+         &cpChunk_BN1.value,&cpChunk_BN1.temporary
+      },
+      1,0
+   };
+   BN_SET_ID(&cpChunk_BN1.bn);
+   return &cpChunk_BN1.bn;
+}
 
-#define cpBN_OneRef OWNAPI(cpBN_OneRef)
-IppsBigNumState* cpBN_OneRef(void)
-{ return &cpChunk_BN1.bn; };
+/*F*
+//    Name: cpBN_TwoRef
+//
+// Purpose: BN(2) and reference
+//
+//  Return:
+//      BigNum = 2
+*F*/
 
-/* BN(2) and reference */
-static IppsBigNumStateChunk cpChunk_BN2 = {
-   {
-      idCtxBigNum,
-      ippBigNumPOS,
-      1,1,
-      &cpChunk_BN2.value,&cpChunk_BN2.temporary
-   },
-   2,0
-};
-#define cpBN_TwoRef OWNAPI(cpBN_TwoRef)
-IppsBigNumState* cpBN_TwoRef(void)
-{ return &cpChunk_BN2.bn; };
+IppsBigNumState* cpBN_TwoRef (void)
+{
+   static IppsBigNumStateChunk cpChunk_BN2 = {
+      {
+         idCtxUnknown,
+         ippBigNumPOS,
+         1,1,
+         &cpChunk_BN2.value,&cpChunk_BN2.temporary
+      },
+      2,0
+   };
+   BN_SET_ID(&cpChunk_BN2.bn);
+   return &cpChunk_BN2.bn;
+}
 
-/* BN(3) and reference */
-static IppsBigNumStateChunk cpChunk_BN3 = {
-   {
-      idCtxBigNum,
-      ippBigNumPOS,
-      1,1,
-      &cpChunk_BN3.value,&cpChunk_BN3.temporary
-   },
-   3,0
-};
-#define cpBN_ThreeRef OWNAPI(cpBN_ThreeRef)
-IppsBigNumState* cpBN_ThreeRef(void)
-{ return &cpChunk_BN3.bn; };
+/*F*
+//    Name: cpBN_ThreeRef
+//
+// Purpose: BN(3) and reference
+//
+//  Return:
+//      BigNum = 3
+*F*/
 
-
+IppsBigNumState* cpBN_ThreeRef (void)
+{
+   static IppsBigNumStateChunk cpChunk_BN3 = {
+      {
+         idCtxUnknown,
+         ippBigNumPOS,
+         1,1,
+         &cpChunk_BN3.value,&cpChunk_BN3.temporary
+      },
+      3,0
+   };
+   BN_SET_ID(&cpChunk_BN3.bn);
+   return &cpChunk_BN3.bn;
+}
 
 /*F*
 //    Name: ippsBigNumGetSize
@@ -102,36 +130,36 @@ IppsBigNumState* cpBN_ThreeRef(void)
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pCtxSize == NULL
-//    ippStsLengthErr         len32 < 1
-//                            len32 > BITS2WORD32_SIZE(BN_MAXBITSIZE)
+//    ippStsLengthErr         length < 1
+//                            length > BITS2WORD32_SIZE(BN_MAXBITSIZE)
 //    ippStsNoErr             no errors
 //
 // Parameters:
-//    pCtxSize pointer BigNum ctx size
+//    length  max BN length (32-bits segments)
+//    pSize   pointer BigNum ctx size
 //
 *F*/
-IPPFUN(IppStatus, ippsBigNumGetSize, (cpSize len32, cpSize *pCtxSize))
+IPPFUN(IppStatus, ippsBigNumGetSize, (int length, cpSize *pCtxSize))
 {
    IPP_BAD_PTR1_RET(pCtxSize);
-   IPP_BADARG_RET(len32<1 || len32>BITS2WORD32_SIZE(BN_MAXBITSIZE), ippStsLengthErr);
+   IPP_BADARG_RET(length<1 || length>BITS2WORD32_SIZE(BN_MAXBITSIZE), ippStsLengthErr);
 
    {
       /* convert length to the number of BNU_CHUNK_T */
-      cpSize len = INTERNAL_BNU_LENGTH(len32);
+      cpSize len = INTERNAL_BNU_LENGTH(length);
 
       /* reserve one BNU_CHUNK_T more for cpDiv_BNU,
          mul, mont exp operations */
       len++;
 
-      *pCtxSize = sizeof(IppsBigNumState)
-                + len*sizeof(BNU_CHUNK_T)
-                + len*sizeof(BNU_CHUNK_T)
+      *pCtxSize = (Ipp32s)sizeof(IppsBigNumState)
+                + len*(Ipp32s)sizeof(BNU_CHUNK_T)
+                + len*(Ipp32s)sizeof(BNU_CHUNK_T)
                 + BN_ALIGNMENT-1;
 
       return ippStsNoErr;
    }
 }
-
 
 /*F*
 //    Name: ippsBigNumInit
@@ -140,82 +168,112 @@ IPPFUN(IppStatus, ippsBigNumGetSize, (cpSize len32, cpSize *pCtxSize))
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pBN == NULL
-//    ippStsLengthErr         len32<1
-//                            len32 > BITS2WORD32_SIZE(BN_MAXBITSIZE)
+//    ippStsLengthErr         length<1
+//                            length > BITS2WORD32_SIZE(BN_MAXBITSIZE)
 //    ippStsNoErr             no errors
 //
 // Parameters:
-//    len32    max BN length (32-bits segments)
+//    length    max BN length (32-bits segments)
 //    pBN      BigNum ctx
 //
 *F*/
-IPPFUN(IppStatus, ippsBigNumInit, (cpSize len32, IppsBigNumState* pBN))
+IPPFUN(IppStatus, ippsBigNumInit, (int length, IppsBigNumState* pBN))
 {
-   IPP_BADARG_RET(len32<1 || len32>BITS2WORD32_SIZE(BN_MAXBITSIZE), ippStsLengthErr);
-   IPP_BAD_PTR1_RET(pBN);
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
+    IPP_BADARG_RET(length<1 || length>BITS2WORD32_SIZE(BN_MAXBITSIZE), ippStsLengthErr);
+    IPP_BAD_PTR1_RET(pBN);
 
-   {
-      Ipp8u* ptr = (Ipp8u*)pBN;
+    {
+        Ipp8u* ptr = (Ipp8u*)pBN;
 
-      /* convert length to the number of BNU_CHUNK_T */
-      cpSize len = INTERNAL_BNU_LENGTH(len32);
+        /* convert length to the number of BNU_CHUNK_T */
+        cpSize len = INTERNAL_BNU_LENGTH(length);
 
-      BN_ID(pBN) = idCtxUnknown;
-      BN_SIGN(pBN) = ippBigNumPOS;
-      BN_SIZE(pBN) = 1;     /* initial valie is zero */
-      BN_ROOM(pBN) = len;   /* close to what has been passed by user */
+        BN_SIGN(pBN) = ippBigNumPOS;
+        BN_SIZE(pBN) = 1;     /* initial valie is zero */
+        BN_ROOM(pBN) = len;   /* close to what has been passed by user */
 
-      /* reserve one BNU_CHUNK_T more for cpDiv_BNU,
-         mul, mont exp operations */
-      len++;
+                              /* reserve one BNU_CHUNK_T more for cpDiv_BNU,
+                              mul, mont exp operations */
+        len++;
 
-      /* allocate buffers */
-      BN_NUMBER(pBN) = (BNU_CHUNK_T*)(ptr += sizeof(IppsBigNumState));
-      BN_BUFFER(pBN) = (BNU_CHUNK_T*)(ptr += len*sizeof(BNU_CHUNK_T)); /* use expanded length here */
+        ptr += sizeof(IppsBigNumState);
 
-      /* set BN value and buffer to zero */
-      ZEXPAND_BNU(BN_NUMBER(pBN), 0, len);
-      ZEXPAND_BNU(BN_BUFFER(pBN), 0, len);
+        /* allocate buffers */
+        ptr = (Ipp8u*)(IPP_ALIGNED_PTR(ptr, BN_ALIGNMENT));
+        BN_NUMBER(pBN) = (BNU_CHUNK_T*)ptr;
+        ptr += len * (Ipp32s)sizeof(BNU_CHUNK_T);
+        BN_BUFFER(pBN) = (BNU_CHUNK_T*)(ptr); /* use expanded length here */
 
-      BN_ID(pBN) = idCtxBigNum;
-      return ippStsNoErr;
-   }
+                                                                           /* set BN value and buffer to zero */
+        ZEXPAND_BNU(BN_NUMBER(pBN), 0, len);
+        ZEXPAND_BNU(BN_BUFFER(pBN), 0, len);
+
+        BN_SET_ID(pBN);
+        return ippStsNoErr;
+    }
 }
 
-/*
-// Serialize / Deserialize bigNum context
-*/
+/*F*
+//    Name: cpPackBigNumCtx
+//
+// Purpose: Serialize bigNum context
+//
+// Parameters:
+//    pBN     BigNum
+//    pBuffer buffer
+*F*/
 void cpPackBigNumCtx(const IppsBigNumState* pBN, Ipp8u* pBuffer)
 {
-   IppsBigNumState* pAlignedBuffer = (IppsBigNumState*)(IPP_ALIGNED_PTR((pBuffer), BN_ALIGNMENT));
-   CopyBlock(pBN, pAlignedBuffer, sizeof(IppsBigNumState));
-   BN_NUMBER(pAlignedBuffer) = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(BN_NUMBER(pBN))-IPP_UINT_PTR(pBN));
-   BN_BUFFER(pAlignedBuffer) = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_UINT_PTR(BN_BUFFER(pBN))-IPP_UINT_PTR(pBN));
-   CopyBlock(BN_NUMBER(pBN), (Ipp8u*)pAlignedBuffer+IPP_UINT_PTR(BN_NUMBER(pAlignedBuffer)), BN_ROOM(pBN)*sizeof(BNU_CHUNK_T));
-   CopyBlock(BN_BUFFER(pBN), (Ipp8u*)pAlignedBuffer+IPP_UINT_PTR(BN_BUFFER(pAlignedBuffer)), BN_ROOM(pBN)*sizeof(BNU_CHUNK_T));
+IppsBigNumState* pB = (IppsBigNumState*)(pBuffer);
+   CopyBlock(pBN, pB, sizeof(IppsBigNumState));
+
+   // TODO: use IPP_INT64
+   cpSize dataAlignment = (cpSize)(IPP_INT_PTR(BN_NUMBER(pBN)) - IPP_INT_PTR(pBN) - (__INT64)sizeof(IppsBigNumState));
+
+   BN_NUMBER(pB) = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_INT_PTR(BN_NUMBER(pBN))-IPP_INT_PTR(pBN) - dataAlignment);
+   BN_BUFFER(pB) = (BNU_CHUNK_T*)((Ipp8u*)NULL + IPP_INT_PTR(BN_BUFFER(pBN))-IPP_INT_PTR(pBN) - dataAlignment);
+
+   CopyBlock(BN_NUMBER(pBN), (Ipp8u*)pB+IPP_UINT_PTR(BN_NUMBER(pB)), BN_ROOM(pBN)*(Ipp32s)sizeof(BNU_CHUNK_T));
+   CopyBlock(BN_BUFFER(pBN), (Ipp8u*)pB+IPP_UINT_PTR(BN_BUFFER(pB)), BN_ROOM(pBN)*(Ipp32s)sizeof(BNU_CHUNK_T));
 }
 
+/*F*
+//    Name: cpUnpackBigNumCtx
+//
+// Purpose: Deserialize bigNum context
+//
+// Parameters:
+//    pBN     BigNum
+//    pBuffer buffer
+*F*/
 void cpUnpackBigNumCtx(const Ipp8u* pBuffer, IppsBigNumState* pBN)
 {
-   IppsBigNumState* pAlignedBuffer = (IppsBigNumState*)(IPP_ALIGNED_PTR((pBuffer), BN_ALIGNMENT));
+     IppsBigNumState* pB = (IppsBigNumState*)(pBuffer);
    CopyBlock(pBuffer, pBN, sizeof(IppsBigNumState));
-   BN_NUMBER(pBN) = (BNU_CHUNK_T*)((Ipp8u*)pBN + IPP_UINT_PTR(BN_NUMBER(pAlignedBuffer)));
-   BN_BUFFER(pBN) = (BNU_CHUNK_T*)((Ipp8u*)pBN + IPP_UINT_PTR(BN_BUFFER(pAlignedBuffer)));
-   CopyBlock((Ipp8u*)pAlignedBuffer+IPP_UINT_PTR(BN_NUMBER(pAlignedBuffer)), BN_NUMBER(pBN), BN_ROOM(pBN)*sizeof(BNU_CHUNK_T));
-   CopyBlock((Ipp8u*)pAlignedBuffer+IPP_UINT_PTR(BN_BUFFER(pAlignedBuffer)), BN_BUFFER(pBN), BN_ROOM(pBN)*sizeof(BNU_CHUNK_T));
+
+   Ipp8u* ptr = (Ipp8u*)pBN;
+   ptr += sizeof(IppsBigNumState);
+   ptr = IPP_ALIGNED_PTR(ptr, BN_ALIGNMENT);
+   BN_NUMBER(pBN) = (BNU_CHUNK_T*)(ptr);
+   ptr += BN_ROOM(pBN)*(Ipp32s)sizeof(BNU_CHUNK_T);
+   BN_BUFFER(pBN) = (BNU_CHUNK_T*)(ptr);
+
+   cpSize bufferOffset = (cpSize)(IPP_INT_PTR(BN_BUFFER(pBN)) - IPP_INT_PTR(pBN));
+
+   CopyBlock((Ipp8u*)pB+sizeof(IppsBigNumState), BN_NUMBER(pBN), BN_ROOM(pBN)*(Ipp32s)sizeof(BNU_CHUNK_T));
+   CopyBlock((Ipp8u*)pB+bufferOffset, BN_BUFFER(pBN), BN_ROOM(pBN)*(Ipp32s)sizeof(BNU_CHUNK_T));
 }
 
 
 /*F*
 //    Name: ippsCmpZero_BN
 //
-// Purpose: Test BigNum value.
+// Purpose: Compare BigNum value with zero.
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pBN == NULL
 //                            pResult == NULL
-//    ippStsContextMatchErr   BN_VALID_ID()
+//    ippStsContextMatchErr   !BN_VALID_ID(pBN)
 //    ippStsNoErr             no errors
 //
 // Parameters:
@@ -227,7 +285,6 @@ IPPFUN(IppStatus, ippsCmpZero_BN, (const IppsBigNumState* pBN, Ipp32u* pResult))
 {
    IPP_BAD_PTR2_RET(pBN, pResult);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
 
    if(BN_SIZE(pBN)==1 && BN_NUMBER(pBN)[0]==0)
@@ -240,7 +297,6 @@ IPPFUN(IppStatus, ippsCmpZero_BN, (const IppsBigNumState* pBN, Ipp32u* pResult))
    return ippStsNoErr;
 }
 
-
 /*F*
 //    Name: ippsCmp_BN
 //
@@ -250,8 +306,8 @@ IPPFUN(IppStatus, ippsCmpZero_BN, (const IppsBigNumState* pBN, Ipp32u* pResult))
 //    ippStsNullPtrErr        pA == NULL
 //                            pB == NULL
 //                            pResult == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pB)
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pB)
 //    ippStsNoErr             no errors
 //
 // Parameters:
@@ -264,27 +320,38 @@ IPPFUN(IppStatus, ippsCmp_BN,(const IppsBigNumState* pA, const IppsBigNumState* 
 {
    IPP_BAD_PTR3_RET(pA, pB, pResult);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pB = (IppsBigNumState*)( IPP_ALIGNED_PTR(pB, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pB), ippStsContextMatchErr);
 
    {
-      int res;
-      if(BN_SIGN(pA)==BN_SIGN(pB)) {
-         res = cpCmp_BNU(BN_NUMBER(pA), BN_SIZE(pA), BN_NUMBER(pB), BN_SIZE(pB));
-         if(ippBigNumNEG==BN_SIGN(pA))
-            res = -res;
-      }
-      else
-         res = (ippBigNumPOS==BN_SIGN(pA))? 1 :-1;
+      BNU_CHUNK_T positiveA = cpIsEqu_ct(ippBigNumPOS, BN_SIGN(pA));
+      BNU_CHUNK_T positiveB = cpIsEqu_ct(ippBigNumPOS, BN_SIGN(pB));
+      BNU_CHUNK_T signMask;
 
-      *pResult = (1==res)? IPP_IS_GT : (-1==res)? IPP_IS_LT : IPP_IS_EQ;
+      /* (ippBigNumPOS == BN_SIGN(pA)) && (ippBigNumPOS==BN_SIGN(pB))  => res = cpCmp_BNU() */
+      BNU_CHUNK_T res  = (BNU_CHUNK_T)( cpCmp_BNU(BN_NUMBER(pA), BN_SIZE(pA), BN_NUMBER(pB), BN_SIZE(pB)) );
+
+      /* (ippBigNumNEG == BN_SIGN(pA)) && (ippBigNumNEG==BN_SIGN(pB))  => invert res value */
+      signMask = ~positiveA & ~positiveB;
+      res = (res & ~signMask) | ((0-res) & signMask);
+
+      /* (ippBigNumPOS == BN_SIGN(pA)) && (ippBigNumNEG==BN_SIGN(pB))  => res = 1 */
+      signMask = positiveA & ~positiveB;
+      res = (res & ~signMask) | ((1) & signMask);
+
+      /* (ippBigNumNEG == BN_SIGN(pA)) && (ippBigNumPOS==BN_SIGN(pB))  => res = -1 */
+      signMask = ~positiveA & positiveB;
+      res = (res & ~signMask) | ((BNU_CHUNK_T)(-1) & signMask);
+
+      // map res into IPP_IS_LT/EQ/GT
+      Ipp32u cmpResult = (Ipp32u)( (cpIsEqu_ct(res, (BNU_CHUNK_T)(-1)) & IPP_IS_LT)
+                                 | (cpIsEqu_ct(res, (BNU_CHUNK_T)(0))  & IPP_IS_EQ)
+                                 | (cpIsEqu_ct(res, (BNU_CHUNK_T)(1))  & IPP_IS_GT) );
+      *pResult = cmpResult;
 
       return ippStsNoErr;
    }
 }
-
 
 /*F*
 //    Name: ippsGetSize_BN
@@ -294,7 +361,7 @@ IPPFUN(IppStatus, ippsCmp_BN,(const IppsBigNumState* pA, const IppsBigNumState* 
 // Returns:                Reason:
 //    ippStsNullPtrErr        pBN == NULL
 //                            pSize == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pBN)
+//    ippStsContextMatchErr   !BN_VALID_ID(pBN)
 //    ippStsNoErr             no errors
 //
 // Parameters:
@@ -306,10 +373,9 @@ IPPFUN(IppStatus, ippsGetSize_BN, (const IppsBigNumState* pBN, cpSize* pSize))
 {
    IPP_BAD_PTR2_RET(pBN, pSize);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
 
-   *pSize = BN_ROOM(pBN)*sizeof(BNU_CHUNK_T)/sizeof(Ipp32u);
+   *pSize = BN_ROOM(pBN)*(Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
 
     return ippStsNoErr;
 }
@@ -323,40 +389,39 @@ IPPFUN(IppStatus, ippsGetSize_BN, (const IppsBigNumState* pBN, cpSize* pSize))
 // Returns:                Reason:
 //    ippStsNullPtrErr        pBN == NULL
 //                            pData == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pBN)
-//    ippStsLengthErr         len32 < 1
-//    ippStsOutOfRangeErr     len32 > BN_ROOM()
+//    ippStsContextMatchErr   !BN_VALID_ID(pBN)
+//    ippStsLengthErr         length < 1
+//    ippStsOutOfRangeErr     length > BN_ROOM(pBN)
 //    ippStsNoErr             no errors
 //
 // Parameters:
 //    sgn      sign
-//    len32    data size (in Ipp32u chunks)
+//    length   data size (in Ipp32u chunks)
 //    pData    source data pointer
-//    pBn      BigNum ctx
+//    pBN      BigNum ctx
 //
 *F*/
-IPPFUN(IppStatus, ippsSet_BN, (IppsBigNumSGN sgn, cpSize len32, const Ipp32u* pData,
+IPPFUN(IppStatus, ippsSet_BN, (IppsBigNumSGN sgn, int length, const Ipp32u* pData,
                                IppsBigNumState* pBN))
 {
    IPP_BAD_PTR2_RET(pData, pBN);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
 
-   IPP_BADARG_RET(len32<1, ippStsLengthErr);
+   IPP_BADARG_RET(length<1, ippStsLengthErr);
 
-    /* compute real size */
-   FIX_BNU(pData, len32);
+   /* compute real size */
+   FIX_BNU32(pData, length);
 
    {
-      cpSize len = INTERNAL_BNU_LENGTH(len32);
+      cpSize len = INTERNAL_BNU_LENGTH(length);
       IPP_BADARG_RET(len > BN_ROOM(pBN), ippStsOutOfRangeErr);
 
-      ZEXPAND_COPY_BNU((Ipp32u*)BN_NUMBER(pBN), BN_ROOM(pBN)*(int)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u)), pData, len32);
+      ZEXPAND_COPY_BNU((Ipp32u*)BN_NUMBER(pBN), BN_ROOM(pBN)*(int)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u)), pData, length);
 
       BN_SIZE(pBN) = len;
 
-      if(len32==1 && pData[0] == 0)
+      if(length==1 && pData[0] == 0)
          sgn = ippBigNumPOS;  /* consider zero value as positive */
       BN_SIGN(pBN) = sgn;
 
@@ -374,34 +439,33 @@ IPPFUN(IppStatus, ippsSet_BN, (IppsBigNumSGN sgn, cpSize len32, const Ipp32u* pD
 //    ippStsNullPtrErr           pBN == NULL
 //                               pData == NULL
 //                               pSgn == NULL
-//                               pLen32 ==NULL
+//                               pLengthInBits ==NULL
 //    ippStsContextMatchErr      !BN_VALID_ID(pBN)
 //    ippStsNoErr                no errors
 //
 // Parameters:
-//    pSgn     pointer to the sign
-//    pLen32   pointer to the data size (in Ipp32u chunks)
-//    pData    pointer to the data buffer
-//    pBN      BigNum ctx
+//    pSgn            pointer to the sign
+//    pLengthInBits   pointer to the data size (in Ipp32u chunks)
+//    pData           pointer to the data buffer
+//    pBN             BigNum ctx
 //
 *F*/
-IPPFUN(IppStatus, ippsGet_BN, (IppsBigNumSGN* pSgn, cpSize* pLen32, Ipp32u* pData,
+IPPFUN(IppStatus, ippsGet_BN, (IppsBigNumSGN* pSgn, int* pLengthInBits, Ipp32u* pData,
                                const IppsBigNumState* pBN))
 {
-   IPP_BAD_PTR4_RET(pSgn, pLen32, pData, pBN);
+   IPP_BAD_PTR4_RET(pSgn, pLengthInBits, pData, pBN);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
 
    {
-      cpSize len32 = BN_SIZE(pBN)*sizeof(BNU_CHUNK_T)/sizeof(Ipp32u);
+      cpSize len32 = BN_SIZE(pBN)*(Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
       Ipp32u* bnData = (Ipp32u*)BN_NUMBER(pBN);
 
-      FIX_BNU(bnData, len32);
+      FIX_BNU32(bnData, len32);
       COPY_BNU(pData, bnData, len32);
 
       *pSgn = BN_SIGN(pBN);
-      *pLen32 = len32;
+      *pLengthInBits = len32;
 
       return ippStsNoErr;
    }
@@ -415,7 +479,7 @@ IPPFUN(IppStatus, ippsGet_BN, (IppsBigNumSGN* pSgn, cpSize* pLen32, Ipp32u* pDat
 //
 // Returns:                   Reason:
 //    ippStsNullPtrErr           pBN == NULL
-//    ippStsContextMatchErr      BN_VALID_ID(pBN)
+//    ippStsContextMatchErr      !BN_VALID_ID(pBN)
 //    ippStsNoErr                no errors
 //
 // Parameters:
@@ -430,7 +494,6 @@ IPPFUN(IppStatus, ippsRef_BN, (IppsBigNumSGN* pSgn, cpSize* pBitSize, Ipp32u** c
 {
    IPP_BAD_PTR1_RET(pBN);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
 
    if(pSgn)
@@ -446,13 +509,30 @@ IPPFUN(IppStatus, ippsRef_BN, (IppsBigNumSGN* pSgn, cpSize* pBitSize, Ipp32u** c
    return ippStsNoErr;
 }
 
-
+/*F*
+//    Name: ippsExtGet_BN
+//
+// Purpose: Extracts the specified combination of the sign, data
+//          length, and value characteristics of the integer big
+//          number from the input structure.
+//
+// Returns:                   Reason:
+//    ippStsNullPtrErr           pBN == NULL
+//    ippStsContextMatchErr      !BN_VALID_ID(pBN)
+//    ippStsNoErr                no errors
+//
+// Parameters:
+//    pSgn     pointer to the sign
+//    pBitSize pointer to the data size (in bits)
+//    pData    pointer to the data buffer
+//    pBN      BigNum ctx
+//
+*F*/
 IPPFUN(IppStatus, ippsExtGet_BN, (IppsBigNumSGN* pSgn, cpSize* pBitSize, Ipp32u* pData,
                                const IppsBigNumState* pBN))
 {
    IPP_BAD_PTR1_RET(pBN);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
 
    {
@@ -474,33 +554,30 @@ IPPFUN(IppStatus, ippsExtGet_BN, (IppsBigNumSGN* pSgn, cpSize* pBitSize, Ipp32u*
 /*F*
 //    Name: ippsAdd_BN
 //
-// Purpose: Add BigNum.
+// Purpose: Add BigNums.
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pA  == NULL
 //                            pB  == NULL
 //                            pR  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pB)
-//                            BN_VALID_ID(pR)
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pB)
+//                            !BN_VALID_ID(pR)
 //    ippStsOutOfRangeErr     pR can not hold result
 //    ippStsNoErr             no errors
 //
 // Parameters:
-//    pA    source BigNum
-//    pB    source BigNum
+//    pA    source BigNum A
+//    pB    source BigNum B
 //    pR    resultant BigNum
 //
 *F*/
 IPPFUN(IppStatus, ippsAdd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pR))
 {
-   IPP_BAD_PTR3_RET(pA, pB, pR);
+     IPP_BAD_PTR3_RET(pA, pB, pR);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pB = (IppsBigNumState*)( IPP_ALIGNED_PTR(pB, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pB), ippStsContextMatchErr);
-   pR = (IppsBigNumState*)( IPP_ALIGNED_PTR(pR, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pR), ippStsContextMatchErr);
 
    {
@@ -571,15 +648,15 @@ IPPFUN(IppStatus, ippsAdd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 /*F*
 //    Name: ippsSub_BN
 //
-// Purpose: Subtcrac BigNum.
+// Purpose: Subtract BigNums.
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pA  == NULL
 //                            pB  == NULL
 //                            pR  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pB)
-//                            BN_VALID_ID(pR)
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pB)
+//                            !BN_VALID_ID(pR)
 //    ippStsOutOfRangeErr     pR can not hold result
 //    ippStsNoErr             no errors
 //
@@ -593,11 +670,8 @@ IPPFUN(IppStatus, ippsSub_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 {
    IPP_BAD_PTR3_RET(pA, pB, pR);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pB = (IppsBigNumState*)( IPP_ALIGNED_PTR(pB, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pB), ippStsContextMatchErr);
-   pR = (IppsBigNumState*)( IPP_ALIGNED_PTR(pR, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pR), ippStsContextMatchErr);
 
    {
@@ -668,15 +742,15 @@ IPPFUN(IppStatus, ippsSub_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 /*F*
 //    Name: ippsMul_BN
 //
-// Purpose: Multiply BigNum.
+// Purpose: Multiply BigNums.
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pA  == NULL
 //                            pB  == NULL
 //                            pR  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pB)
-//                            BN_VALID_ID(pR)
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pB)
+//                            !BN_VALID_ID(pR)
 //    ippStsOutOfRangeErr     pR can not hold result
 //    ippStsNoErr             no errors
 //
@@ -690,11 +764,8 @@ IPPFUN(IppStatus, ippsMul_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 {
    IPP_BAD_PTR3_RET(pA, pB, pR);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pB = (IppsBigNumState*)( IPP_ALIGNED_PTR(pB, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pB), ippStsContextMatchErr);
-   pR = (IppsBigNumState*)( IPP_ALIGNED_PTR(pR, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pR), ippStsContextMatchErr);
 
    {
@@ -752,19 +823,18 @@ IPPFUN(IppStatus, ippsMul_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
    }
 }
 
-
 /*F*
 //    Name: ippsMAC_BN_I
 //
-// Purpose: Multiply and Accumulate BigNum.
+// Purpose: Multiply and Accumulate BigNums.
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pA  == NULL
 //                            pB  == NULL
 //                            pR  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pB)
-//                            BN_VALID_ID(pR)
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pB)
+//                            !BN_VALID_ID(pR)
 //    ippStsOutOfRangeErr     pR can not fit result
 //    ippStsNoErr             no errors
 //
@@ -778,11 +848,8 @@ IPPFUN(IppStatus, ippsMAC_BN_I, (IppsBigNumState* pA, IppsBigNumState* pB, IppsB
 {
    IPP_BAD_PTR3_RET(pA, pB, pR);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pB = (IppsBigNumState*)( IPP_ALIGNED_PTR(pB, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pB), ippStsContextMatchErr);
-   pR = (IppsBigNumState*)( IPP_ALIGNED_PTR(pR, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pR), ippStsContextMatchErr);
 
    {
@@ -798,7 +865,6 @@ IPPFUN(IppStatus, ippsMAC_BN_I, (IppsBigNumState* pA, IppsBigNumState* pB, IppsB
       cpSize nsP = BITS_BNU_CHUNK(bitSizeA+bitSizeB);
 
       /* test if multiplicant/multiplier is zero */
-      //gres: mistaken condition: if(!nsP) return ippStsNoErr;
       if(!bitSizeA || !bitSizeB) return ippStsNoErr;
       /* test if product can't fit to the result */
       IPP_BADARG_RET(BN_ROOM(pR)<nsP, ippStsOutOfRangeErr);
@@ -855,17 +921,18 @@ IPPFUN(IppStatus, ippsMAC_BN_I, (IppsBigNumState* pA, IppsBigNumState* pB, IppsB
 /*F*
 //    Name: ippsDiv_BN
 //
-// Purpose: Divide BigNum.
+// Purpose: Divide BigNums.
 //
 // Returns:                Reason:
 //    ippStsNullPtrErr        pA  == NULL
 //                            pB  == NULL
 //                            pQ  == NULL
 //                            pR  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pB)
-//                            BN_VALID_ID(pQ)
-//                            BN_VALID_ID(pR)
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pB)
+//                            !BN_VALID_ID(pQ)
+//                            !BN_VALID_ID(pR)
+//    ippStsDivByZeroErr      BN_SIZE(pB) == 1 && BN_NUMBER(pB)[0] == 0
 //    ippStsOutOfRangeErr     pQ and/or pR can not hold result
 //    ippStsNoErr             no errors
 //
@@ -882,13 +949,9 @@ IPPFUN(IppStatus, ippsDiv_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 {
    IPP_BAD_PTR4_RET(pA, pB, pQ, pR);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pB = (IppsBigNumState*)( IPP_ALIGNED_PTR(pB, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pB), ippStsContextMatchErr);
-   pQ = (IppsBigNumState*)( IPP_ALIGNED_PTR(pQ, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pQ), ippStsContextMatchErr);
-   pR = (IppsBigNumState*)( IPP_ALIGNED_PTR(pR, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pR), ippStsContextMatchErr);
 
    IPP_BADARG_RET(BN_SIZE(pB)== 1 && BN_NUMBER(pB)[0]==0, ippStsDivByZeroErr);
@@ -911,12 +974,10 @@ IPPFUN(IppStatus, ippsDiv_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
       COPY_BNU(pDataR, pDataA, nsR);
 
       BN_SIGN(pQ) = BN_SIGN(pA)==BN_SIGN(pB)? ippBigNumPOS : ippBigNumNEG;
-      //gres: leading zeros are removed by cpDiv_BNU: FIX_BNU(pDataQ, nsQ);
       BN_SIZE(pQ) = nsQ;
       if(nsQ==1 && pDataQ[0]==0) BN_SIGN(pQ) = ippBigNumPOS;
 
       BN_SIGN(pR) = BN_SIGN(pA);
-      //gres: leading zeros are removed by cpDiv_BNU: FIX_BNU(pDataR, nsR);
       BN_SIZE(pR) = nsR;
       if(nsR==1 && pDataR[0]==0) BN_SIGN(pR) = ippBigNumPOS;
 
@@ -934,10 +995,12 @@ IPPFUN(IppStatus, ippsDiv_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 //    ippStsNullPtrErr        pA  == NULL
 //                            pM  == NULL
 //                            pR  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pM)
-//                            BN_VALID_ID(pR)
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pM)
+//                            !BN_VALID_ID(pR)
 //    ippStsOutOfRangeErr     pR can not hold result
+//    ippStsBadModulusErr     modulus IppsBigNumState* pM
+//                             is not a positive integer
 //    ippStsNoErr             no errors
 //
 // Parameters:
@@ -950,13 +1013,10 @@ IPPFUN(IppStatus, ippsDiv_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 *F*/
 IPPFUN(IppStatus, ippsMod_BN, (IppsBigNumState* pA, IppsBigNumState* pM, IppsBigNumState* pR))
 {
-   IPP_BAD_PTR3_RET(pA, pM, pR);
+      IPP_BAD_PTR3_RET(pA, pM, pR);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pM = (IppsBigNumState*)( IPP_ALIGNED_PTR(pM, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pM), ippStsContextMatchErr);
-   pR = (IppsBigNumState*)( IPP_ALIGNED_PTR(pR, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pR), ippStsContextMatchErr);
 
    IPP_BADARG_RET(BN_NEGATIVE(pM), ippStsBadModulusErr);
@@ -1005,37 +1065,34 @@ IPPFUN(IppStatus, ippsMod_BN, (IppsBigNumState* pA, IppsBigNumState* pM, IppsBig
 // Returns:                Reason:
 //    ippStsNullPtrErr        pA  == NULL
 //                            pB  == NULL
-//                            pG  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pB)
-//                            BN_VALID_ID(pG)
+//                            pGCD  == NULL
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pB)
+//                            !BN_VALID_ID(pGCD)
 //    ippStsBadArgErr         A==B==0
-//    ippStsOutOfRangeErr     pG can not hold result
+//    ippStsOutOfRangeErr     pGCD can not hold result
 //    ippStsNoErr             no errors
 //
 // Parameters:
 //    pA    source BigNum
 //    pB    source BigNum
-//    pG    GCD value
+//    pGCD    GCD value
 //
 *F*/
-IPPFUN(IppStatus, ippsGcd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pG))
+IPPFUN(IppStatus, ippsGcd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pGCD))
 {
-   IPP_BAD_PTR3_RET(pA, pB, pG);
+   IPP_BAD_PTR3_RET(pA, pB, pGCD);
 
-   pA = (IppsBigNumState*)(IPP_ALIGNED_PTR(pA, BN_ALIGNMENT));
-   pB = (IppsBigNumState*)(IPP_ALIGNED_PTR(pB, BN_ALIGNMENT));
-   pG = (IppsBigNumState*)(IPP_ALIGNED_PTR(pG, BN_ALIGNMENT));
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
    IPP_BADARG_RET(!BN_VALID_ID(pB), ippStsContextMatchErr);
-   IPP_BADARG_RET(!BN_VALID_ID(pG), ippStsContextMatchErr);
+   IPP_BADARG_RET(!BN_VALID_ID(pGCD), ippStsContextMatchErr);
 
-   IPP_BADARG_RET(BN_ROOM(pG) < IPP_MIN(BN_SIZE(pA), BN_SIZE(pB)), ippStsOutOfRangeErr);
+   IPP_BADARG_RET(BN_ROOM(pGCD) < IPP_MIN(BN_SIZE(pA), BN_SIZE(pB)), ippStsOutOfRangeErr);
 
    {
       IppsBigNumState* x = pA;
       IppsBigNumState* y = pB;
-      IppsBigNumState* g = pG;
+      IppsBigNumState* g = pGCD;
 
       int aIsZero = BN_SIZE(pA)==1 && BN_NUMBER(pA)[0]==0;
       int bIsZero = BN_SIZE(pB)==1 && BN_NUMBER(pB)[0]==0;
@@ -1084,21 +1141,19 @@ IPPFUN(IppStatus, ippsGcd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
          Ipp32u* xData = (Ipp32u*)BN_NUMBER(x);
          Ipp32u* yData = (Ipp32u*)BN_NUMBER(y);
          Ipp32u* gData = (Ipp32u*)BN_NUMBER(g);
-         cpSize nsXmax = BN_ROOM(x)*(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
-         cpSize nsYmax = BN_ROOM(y)*(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
-         cpSize nsGmax = BN_ROOM(g)*(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
-         cpSize nsX = BN_SIZE(x)*(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
-         cpSize nsY = BN_SIZE(y)*(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
+         cpSize nsXmax = BN_ROOM(x)*((Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u)));
+         cpSize nsYmax = BN_ROOM(y)*((Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u)));
+         cpSize nsGmax = BN_ROOM(g)*((Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u)));
+         cpSize nsX = BN_SIZE(x)*((Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u)));
+         cpSize nsY = BN_SIZE(y)*((Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u)));
 
          Ipp32u* T;
          Ipp32u* u;
 
-         FIX_BNU(xData, nsX);
-         FIX_BNU(yData, nsY);
+         FIX_BNU32(xData, nsX);
+         FIX_BNU32(yData, nsY);
 
          /* init buffers */
-         //gres: seems length parameters mistaken exchaged: ZEXPAND_COPY_BNU(xBuffer, nsX, xData, nsXmax);
-         //gres: seems length parameters mistaken exchaged: ZEXPAND_COPY_BNU(yBuffer, nsY, yData, nsYmax);
          ZEXPAND_COPY_BNU(xBuffer, nsXmax, xData, nsX);
          ZEXPAND_COPY_BNU(yBuffer, nsYmax, yData, nsY);
 
@@ -1119,37 +1174,38 @@ IPPFUN(IppStatus, ippsGcd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
             Ipp64s DD = 1;
             Ipp64s t;
 
-            while((yy+CC)!=0 && (yy+DD)!=0) {
+            while((yy+(Ipp64u)CC)!=0 && (yy+(Ipp64u)DD)!=0) {
 #ifdef _SLIMBOOT_OPT
-               Ipp64u q  = DivU64x64Remainder ( xx + AA ,  yy + CC , 0);
-               Ipp64u q1 = DivU64x64Remainder ( xx + BB ,  yy + DD , 0);
+               Ipp64u q  = DivU64x64Remainder ( xx + (Ipp64u)AA ,  yy + (Ipp64u)CC , 0);
+               Ipp64u q1 = DivU64x64Remainder ( xx + (Ipp64u)BB ,  yy + (Ipp64u)DD , 0);
 #else
-               Ipp64u q  = ( xx + AA ) / ( yy + CC );
-               Ipp64u q1 = ( xx + BB ) / ( yy + DD );
+                  Ipp64u q  = ( xx + (Ipp64u)AA ) / ( yy + (Ipp64u)CC );
+                  Ipp64u q1 = ( xx + (Ipp64u)BB ) / ( yy + (Ipp64u)DD );
 #endif
                if(q!=q1)
                   break;
 #ifdef _SLIMBOOT_OPT
                t = AA - MultS64x64 ((Ipp64s)q , CC);
 #else
-               t = AA - q*CC;
+                  t = AA - (Ipp64s)q*CC;
 #endif
                AA = CC;
                CC = t;
 #ifdef _SLIMBOOT_OPT
                t = BB - MultS64x64 ((Ipp64s)q , DD);
 #else
-               t = BB - q*DD;
+               t = BB - (Ipp64s)q*DD;
+
 #endif
                BB = DD;
                DD = t;
 #ifdef _SLIMBOOT_OPT
-               t = xx - MultU64x64 (q , yy);
+               t = (Ipp64s)(xx - MultU64x64 (q , yy));
 #else
-               t = xx - q*yy;
+               t = (Ipp64s)(xx - q*yy);
 #endif
                xx = yy;
-               yy = t;
+               yy = (Ipp64u)t;
             }
 
             if(BB == 0) {
@@ -1229,13 +1285,15 @@ IPPFUN(IppStatus, ippsGcd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
                   }
                }
 
+               IPP_UNREFERENCED_PARAMETER(carry);
+
                /* y = u; x = T; */
                COPY_BNU(yBuffer, u, nsY);
                COPY_BNU(xBuffer, T, nsY);
             }
 
-            FIX_BNU(xBuffer, nsX);
-            FIX_BNU(yBuffer, nsY);
+            FIX_BNU32(xBuffer, nsX);
+            FIX_BNU32(yBuffer, nsY);
 
             if (nsY > nsX) {
                SWAP_PTR(IppsBigNumState, x, y);
@@ -1269,47 +1327,44 @@ IPPFUN(IppStatus, ippsGcd_BN, (IppsBigNumState* pA, IppsBigNumState* pB, IppsBig
 // Returns:                Reason:
 //    ippStsNullPtrErr        pA  == NULL
 //                            pM  == NULL
-//                            pR  == NULL
-//    ippStsContextMatchErr   BN_VALID_ID(pA)
-//                            BN_VALID_ID(pM)
-//                            BN_VALID_ID(pR)
+//                            pInv  == NULL
+//    ippStsContextMatchErr   !BN_VALID_ID(pA)
+//                            !BN_VALID_ID(pM)
+//                            !BN_VALID_ID(pInv)
 //    ippStsBadArgErr         A<=0
 //    ippStsBadModulusErr     M<=0
 //    ippStsScaleRangeErr     A>=M
-//    ippStsOutOfRangeErr     pR can not hold result
+//    ippStsOutOfRangeErr     pInv can not hold result
 //    ippStsNoErr             no errors
 //    ippStsBadModulusErr     inversion not found
 //
 // Parameters:
 //    pA    source (value) BigNum
 //    pM    source (modulus) BigNum
-//    pR    reminder BigNum
+//    pInv  result BigNum
 //
 *F*/
-IPPFUN(IppStatus, ippsModInv_BN, (IppsBigNumState* pA, IppsBigNumState* pM, IppsBigNumState* pR) )
+IPPFUN(IppStatus, ippsModInv_BN, (IppsBigNumState* pA, IppsBigNumState* pM, IppsBigNumState* pInv) )
 {
-   IPP_BAD_PTR3_RET(pA, pM, pR);
+   IPP_BAD_PTR3_RET(pA, pM, pInv);
 
-   pA = (IppsBigNumState*)( IPP_ALIGNED_PTR(pA, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pA), ippStsContextMatchErr);
-   pM = (IppsBigNumState*)( IPP_ALIGNED_PTR(pM, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pM), ippStsContextMatchErr);
-   pR = (IppsBigNumState*)( IPP_ALIGNED_PTR(pR, BN_ALIGNMENT) );
-   IPP_BADARG_RET(!BN_VALID_ID(pR), ippStsContextMatchErr);
+   IPP_BADARG_RET(!BN_VALID_ID(pInv), ippStsContextMatchErr);
 
-    IPP_BADARG_RET(BN_ROOM(pR) < BN_SIZE(pM), ippStsOutOfRangeErr);
+    IPP_BADARG_RET(BN_ROOM(pInv) < BN_SIZE(pM), ippStsOutOfRangeErr);
     IPP_BADARG_RET(BN_NEGATIVE(pA) || (BN_SIZE(pA)==1 && BN_NUMBER(pA)[0]==0), ippStsBadArgErr);
     IPP_BADARG_RET(BN_NEGATIVE(pM) || (BN_SIZE(pM)==1 && BN_NUMBER(pM)[0]==0), ippStsBadModulusErr);
     IPP_BADARG_RET(cpCmp_BNU(BN_NUMBER(pA), BN_SIZE(pA), BN_NUMBER(pM), BN_SIZE(pM)) >= 0, ippStsScaleRangeErr);
 
    {
-      cpSize nsR = cpModInv_BNU(BN_NUMBER(pR),
+      cpSize nsR = cpModInv_BNU(BN_NUMBER(pInv),
                                 BN_NUMBER(pA), BN_SIZE(pA),
                                 BN_NUMBER(pM), BN_SIZE(pM),
-                                BN_BUFFER(pR), BN_BUFFER(pA), BN_BUFFER(pM));
+                                BN_BUFFER(pInv), BN_BUFFER(pA), BN_BUFFER(pM));
       if(nsR) {
-         BN_SIGN(pR) = ippBigNumPOS;
-         BN_SIZE(pR) = nsR;
+         BN_SIGN(pInv) = ippBigNumPOS;
+         BN_SIZE(pInv) = nsR;
          return ippStsNoErr;
       }
       else

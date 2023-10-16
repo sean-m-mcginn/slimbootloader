@@ -36,7 +36,7 @@
 */
 struct _cpBigNum
 {
-   IppCtxId      idCtx;    /* BigNum ctx id                 */
+   Ipp32u        idCtx;    /* BigNum ctx id                 */
    IppsBigNumSGN sgn;      /* sign                          */
    cpSize        size;     /* BigNum size (BNU_CHUNK_T)     */
    cpSize        room;     /* BigNum max size (BNU_CHUNK_T) */
@@ -44,8 +44,9 @@ struct _cpBigNum
    BNU_CHUNK_T*  buffer;   /* temporary buffer              */
 };
 
+
 /* BN accessory macros */
-#define BN_ID(pBN)         ((pBN)->idCtx)
+#define BN_SET_ID(pBN)     ((pBN)->idCtx = (Ipp32u)idCtxBigNum ^ (Ipp32u)IPP_UINT_PTR(pBN))
 #define BN_SIGN(pBN)       ((pBN)->sgn)
 #define BN_POSITIVE(pBN)   (BN_SIGN(pBN)==ippBigNumPOS)
 #define BN_NEGATIVE(pBN)   (BN_SIGN(pBN)==ippBigNumNEG)
@@ -56,7 +57,7 @@ struct _cpBigNum
 #define BN_SIZE32(pBN)     ((pBN)->size*((Ipp32s)(sizeof(BNU_CHUNK_T)/sizeof(Ipp32u))))
 //#define BN_SIZE32(pBN)     (BITS2WORD32_SIZE( BITSIZE_BNU(BN_NUMBER((pBN)),BN_SIZE((pBN)))))
 
-#define BN_VALID_ID(pBN)   (BN_ID((pBN))==idCtxBigNum)
+#define BN_VALID_ID(pBN)   ((((pBN)->idCtx) ^ (Ipp32u)IPP_UINT_PTR((pBN))) == (Ipp32u)idCtxBigNum)
 
 #define INVERSE_SIGN(s)    (((s)==ippBigNumPOS)? ippBigNumNEG : ippBigNumPOS)
 
@@ -173,7 +174,7 @@ __INLINE IppsBigNumState* BN_Set(const BNU_CHUNK_T* pData, cpSize len, IppsBigNu
 }
 __INLINE IppsBigNumState* BN_Make(BNU_CHUNK_T* pData, BNU_CHUNK_T* pBuffer, cpSize len, IppsBigNumState* pBN)
 {
-   BN_ID(pBN)   = idCtxBigNum;
+   BN_SET_ID(pBN);
    BN_SIGN(pBN) = ippBigNumPOS;
    BN_SIZE(pBN) = 1;
    BN_ROOM(pBN) = len;
@@ -181,8 +182,6 @@ __INLINE IppsBigNumState* BN_Make(BNU_CHUNK_T* pData, BNU_CHUNK_T* pBuffer, cpSi
    BN_BUFFER(pBN) = pBuffer;
    return pBN;
 }
-
-
 
 /*
 // fixed single chunk BN

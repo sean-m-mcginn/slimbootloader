@@ -39,36 +39,108 @@
 #include "pcpbnumisc.h"
 
 
-/*
-// number of leading zeros
-*/
-cpSize cpNLZ_BNU(BNU_CHUNK_T x)
-{
-   cpSize nlz = BNU_CHUNK_BITS;
-   if(x) {
-      nlz = 0;
-      #if (BNU_CHUNK_BITS == BNU_CHUNK_64BIT)
-      if( 0==(x & 0xFFFFFFFF00000000) ) { nlz +=32; x<<=32; }
-      if( 0==(x & 0xFFFF000000000000) ) { nlz +=16; x<<=16; }
-      if( 0==(x & 0xFF00000000000000) ) { nlz += 8; x<<= 8; }
-      if( 0==(x & 0xF000000000000000) ) { nlz += 4; x<<= 4; }
-      if( 0==(x & 0xC000000000000000) ) { nlz += 2; x<<= 2; }
-      if( 0==(x & 0x8000000000000000) ) { nlz++; }
-      #else
-      if( 0==(x & 0xFFFF0000) ) { nlz +=16; x<<=16; }
-      if( 0==(x & 0xFF000000) ) { nlz += 8; x<<= 8; }
-      if( 0==(x & 0xF0000000) ) { nlz += 4; x<<= 4; }
-      if( 0==(x & 0xC0000000) ) { nlz += 2; x<<= 2; }
-      if( 0==(x & 0x80000000) ) { nlz++; }
-      #endif
+/*F*
+//    Name: cpNLZ_BNU
+//
+// Purpose: Returns number of leading zeros of the BNU.
+//
+// Returns:
+//       number of leading zeros of the BNU
+//
+// Parameters:
+//    x         BigNum x
+//
+*F*/
+
+#if !((_IPP >= _IPP_H9) || (_IPP32E >= _IPP32E_L9))
+#if 0
+   cpSize cpNLZ_BNU (BNU_CHUNK_T x)
+   {
+      cpSize nlz = BNU_CHUNK_BITS;
+      if(x) {
+         nlz = 0;
+         #if (BNU_CHUNK_BITS == BNU_CHUNK_64BIT)
+         if( 0==(x & 0xFFFFFFFF00000000) ) { nlz +=32; x<<=32; }
+         if( 0==(x & 0xFFFF000000000000) ) { nlz +=16; x<<=16; }
+         if( 0==(x & 0xFF00000000000000) ) { nlz += 8; x<<= 8; }
+         if( 0==(x & 0xF000000000000000) ) { nlz += 4; x<<= 4; }
+         if( 0==(x & 0xC000000000000000) ) { nlz += 2; x<<= 2; }
+         if( 0==(x & 0x8000000000000000) ) { nlz++; }
+         #else
+         if( 0==(x & 0xFFFF0000) ) { nlz +=16; x<<=16; }
+         if( 0==(x & 0xFF000000) ) { nlz += 8; x<<= 8; }
+         if( 0==(x & 0xF0000000) ) { nlz += 4; x<<= 4; }
+         if( 0==(x & 0xC0000000) ) { nlz += 2; x<<= 2; }
+         if( 0==(x & 0x80000000) ) { nlz++; }
+         #endif
+      }
+      return nlz;
    }
+#endif
+/* cte version */
+cpSize cpNLZ_BNU (BNU_CHUNK_T x)
+{
+   cpSize nlz = 0;
+   BNU_CHUNK_T
+   #if (BNU_CHUNK_BITS == BNU_CHUNK_64BIT)
+   mask = cpIsZero_ct(x & 0xFFFFFFFF00000000);
+   nlz += 32 & mask; x = ((x<<32) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0xFFFF000000000000);
+   nlz += 16 & mask; x = ((x<<16) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0xFF00000000000000);
+   nlz += 8 & mask; x = ((x << 8) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0xF000000000000000);
+   nlz += 4 & mask; x = ((x << 4) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0xC000000000000000);
+   nlz += 2 & mask; x = ((x << 2) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0x8000000000000000);
+   nlz += 1 & mask; x = ((x << 1) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0x8000000000000000);
+   nlz += 1 & mask;
+#else
+   mask = cpIsZero_ct(x & 0xFFFF0000);
+   nlz += 16 & mask; x = ((x << 16) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0xFF000000);
+   nlz += 8 & mask; x = ((x << 8) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0xF0000000);
+   nlz += 4 & mask; x = ((x << 4) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0xC0000000);
+   nlz += 2 & mask; x = ((x << 2) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0x80000000);
+   nlz += 1 & mask; x = ((x << 1) & mask) | (x & ~mask);
+
+   mask = cpIsZero_ct(x & 0x80000000);
+   nlz += 1 & mask;
+#endif
    return nlz;
 }
 
-/*
-// number of trailing zeros
-*/
-cpSize cpNTZ_BNU(BNU_CHUNK_T x)
+#endif
+
+/*F*
+//    Name: cpNTZ_BNU
+//
+// Purpose: Returns number of trailing zeros of the BNU.
+//
+// Returns:
+//       number of trailing zeros of the BNU
+//
+// Parameters:
+//    x         BigNum x
+//
+*F*/
+
+cpSize cpNTZ_BNU (BNU_CHUNK_T x)
 {
    cpSize ntz = BNU_CHUNK_BITS;
    if(x) {
@@ -91,13 +163,22 @@ cpSize cpNTZ_BNU(BNU_CHUNK_T x)
    return ntz;
 }
 
-/*
-// Logical shift right (including inplace)
+/*F*
+//    Name: cpLSR_BNU
 //
-// Returns new length
+// Purpose: Logical shift right (including inplace).
 //
-*/
-cpSize cpLSR_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA, cpSize nBits)
+// Returns:
+//       new length
+//
+// Parameters:
+//    pA          BigNum A
+//    pR          result BigNum
+//    nsA         size of A
+//    nBits       size of shift in bits 
+*F*/
+
+cpSize cpLSR_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA, cpSize nBits)
 {
    cpSize nw = nBits/BNU_CHUNK_BITS;
    cpSize n;
@@ -128,12 +209,23 @@ cpSize cpLSR_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA, cpSize nBit
    return nsA+nw;
 }
 
-/*
-// Returns Most Significant Bit of the BNU
+/*F*
+//    Name: cpMSBit_BNU
+//
+// Purpose: Returns Most Significant Bit of the BNU.
+//
+// Returns:
+//       Most Significant Bit of the BNU
+//
+// Parameters:
+//    pA          BigNum A
+//    nsA         size of A
+//
 // Note:
 //    if BNU==0, -1 will return
-*/
-int cpMSBit_BNU(const BNU_CHUNK_T* pA, cpSize nsA)
+*F*/
+
+int cpMSBit_BNU (const BNU_CHUNK_T* pA, cpSize nsA)
 {
    int msb;
    FIX_BNU(pA, nsA);
@@ -141,12 +233,23 @@ int cpMSBit_BNU(const BNU_CHUNK_T* pA, cpSize nsA)
    return msb;
 }
 
-/*
-// Convert Oct String into BNU representation
+
+/*F*
+//    Name: cpFromOctStr_BNU
 //
-// Returns size of BNU in BNU_CHUNK_T chunks
-*/
-cpSize cpFromOctStr_BNU(BNU_CHUNK_T* pA, const Ipp8u* pStr, cpSize strLen)
+// Purpose: Convert Oct String into BNU representation.
+//
+// Returns:                 
+//          size of BNU in BNU_CHUNK_T chunks
+//
+// Parameters:
+//    pStr        pointer to the source octet string
+//    strLen      octet string length
+//    pA          pointer to the target BN
+//
+*F*/
+
+cpSize cpFromOctStr_BNU (BNU_CHUNK_T* pA, const Ipp8u* pStr, cpSize strLen)
 {
    int nsA =0;
 
@@ -180,12 +283,23 @@ cpSize cpFromOctStr_BNU(BNU_CHUNK_T* pA, const Ipp8u* pStr, cpSize strLen)
    return nsA;
 }
 
-/*
-// Convert BNU into HexString representation
+
+/*F*
+//    Name: cpToOctStr_BNU
 //
-// Returns length of the string or 0 if no success
-*/
-cpSize cpToOctStr_BNU(Ipp8u* pStr, cpSize strLen, const BNU_CHUNK_T* pA, cpSize nsA)
+// Purpose: Convert BNU into HexString representation.
+//
+// Returns:  
+//       length of the string or 0 if no success
+//
+// Parameters:
+//    pA          pointer to the source BN A
+//    nsA         size of A
+//    pStr        pointer to the target octet string
+//    strLen      octet string length
+*F*/
+
+cpSize cpToOctStr_BNU (Ipp8u* pStr, cpSize strLen, const BNU_CHUNK_T* pA, cpSize nsA)
 {
    FIX_BNU(pA, nsA);
    {
@@ -204,9 +318,9 @@ cpSize cpToOctStr_BNU(Ipp8u* pStr, cpSize strLen, const BNU_CHUNK_T* pA, cpSize 
             //int nb;
             cpSize nb;
             for(nb=cpNLZ_BNU(x)/BYTESIZE; nb<(cpSize)(sizeof(BNU_CHUNK_T)); cnvLen++, nb++)
-               *pStr++ = EBYTE(x, sizeof(BNU_CHUNK_T)-1-nb);
+               *pStr++ = EBYTE(x, (Ipp32s)sizeof(BNU_CHUNK_T)-1-nb);
 
-            for(--nsA; nsA>0; cnvLen+=sizeof(BNU_CHUNK_T), nsA--) {
+            for(--nsA; nsA>0; cnvLen+=(Ipp32s)sizeof(BNU_CHUNK_T), nsA--) {
                x = pA[nsA-1];
                #if (BNU_CHUNK_BITS==BNU_CHUNK_64BIT)
                *pStr++ = EBYTE(x,7);
@@ -220,6 +334,8 @@ cpSize cpToOctStr_BNU(Ipp8u* pStr, cpSize strLen, const BNU_CHUNK_T* pA, cpSize 
                *pStr++ = EBYTE(x,0);
             }
          }
+         IPP_UNREFERENCED_PARAMETER(cnvLen);
+
          return strLen;
       }
       else

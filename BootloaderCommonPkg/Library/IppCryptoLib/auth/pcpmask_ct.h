@@ -84,6 +84,12 @@ __INLINE BNU_CHUNK_T cpIsEqu_ct(BNU_CHUNK_T a, BNU_CHUNK_T b)
    return cpIsZero_ct(a ^ b);
 }
 
+/* test if a<b */
+__INLINE BNU_CHUNK_T cpIsLt_ct(BNU_CHUNK_T a, BNU_CHUNK_T b)
+{
+   return cpIsMsb_ct(a ^ ((a ^ b) | ((a - b) ^ b)));
+}
+
 /* replace under mask: dst[] = replaceFlag? src[] : dst[] */
 __INLINE void cpMaskedReplace_ct(BNU_CHUNK_T* dst, const BNU_CHUNK_T* src, int len, BNU_CHUNK_T replaceMask)
 {
@@ -97,7 +103,7 @@ __INLINE void cpMaskedReplace_ct(BNU_CHUNK_T* dst, const BNU_CHUNK_T* src, int l
 __INLINE void cpMaskedCopyBNU_ct(BNU_CHUNK_T* dst, BNU_CHUNK_T mask, const BNU_CHUNK_T* src1, const BNU_CHUNK_T* src2, int len)
 {
    int i;
-   for(i=0; i<(len); i++)
+   for(i=0; i<len; i++)
       dst[i] = (src1[i] & mask) ^ (src2[i] & ~mask);
 }
 

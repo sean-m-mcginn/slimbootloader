@@ -58,7 +58,8 @@ IPPFUN(IppStatus, ippsHMACGetSize_rmf,(int* pSize))
    /* test size's pointer */
    IPP_BAD_PTR1_RET(pSize);
 
-   *pSize = sizeof(IppsHMACState_rmf) +(HASH_ALIGNMENT-1);
+   *pSize = sizeof(IppsHMACState_rmf);
+
    return ippStsNoErr;
 }
 
@@ -86,14 +87,13 @@ IPPFUN(IppStatus, ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen,
 {
    /* test pointer */
    IPP_BAD_PTR2_RET(pCtx, pMethod);
-   pCtx = (IppsHMACState_rmf*)( IPP_ALIGNED_PTR(pCtx, HASH_ALIGNMENT) );
 
    /* test key pointer and key length */
    IPP_BAD_PTR1_RET(pKey);
    IPP_BADARG_RET(0>keyLen, ippStsLengthErr);
 
    /* set state ID */
-   HMAC_CTX_ID(pCtx) = idCtxHMAC;
+   HMAC_SET_CTX_ID(pCtx);
 
    /* init hash context */
    ippsHashInit_rmf(&HASH_CTX(pCtx), pMethod);
@@ -159,11 +159,24 @@ IPPFUN(IppStatus, ippsHMACPack_rmf,(const IppsHMACState_rmf* pCtx, Ipp8u* pBuffe
    IPP_BAD_PTR2_RET(pCtx, pBuffer);
    /* test the context */
    IPP_BADARG_RET(!HMAC_VALID_ID(pCtx), ippStsContextMatchErr);
-   /* test buffer length */
-   IPP_BADARG_RET((int)(sizeof(IppsHMACState_rmf)+HASH_ALIGNMENT-1)>bufSize, ippStsNoMemErr);
 
-   CopyBlock(pCtx, pBuffer, sizeof(IppsHMACState_rmf));
-   return ippStsNoErr;
+   {
+      int ctxSize;
+      ippsHMACGetSize_rmf(&ctxSize);
+      /* test buffer length */
+      IPP_BADARG_RET(ctxSize>bufSize, ippStsNoMemErr);
+
+      CopyBlock(pCtx, pBuffer, ctxSize);
+      
+      /* Reset IppsHMACState_rmf context id */
+      IppsHMACState_rmf* pCopy = (IppsHMACState_rmf*)pBuffer;
+      HMAC_RESET_CTX_ID(pCopy);
+      /* Reset context id for IppsHashState_rmf, which is the part of IppsHMACState_rmf */
+      IppsHashState_rmf* pHashCopy = (IppsHashState_rmf*)&HASH_CTX(pCopy);
+      HASH_RESET_ID(pHashCopy,idCtxHash);
+
+      return ippStsNoErr;
+   }
 }
 
 /*F*
@@ -187,6 +200,12 @@ IPPFUN(IppStatus, ippsHMACUnpack_rmf,(const Ipp8u* pBuffer, IppsHMACState_rmf* p
    IPP_BAD_PTR2_RET(pCtx, pBuffer);
 
    CopyBlock(pBuffer, pCtx, sizeof(IppsHMACState_rmf));
+
+   /* Set IppsHMACState_rmf context id */
+   HMAC_SET_CTX_ID(pCtx);
+   /* Set context id for IppsHashState_rmf, which is the part of IppsHMACState_rmf */
+   HASH_SET_ID(&HASH_CTX(pCtx),idCtxHash);
+
    return ippStsNoErr;
 }
 
@@ -217,8 +236,12 @@ IPPFUN(IppStatus, ippsHMACDuplicate_rmf,(const IppsHMACState_rmf* pSrcCtx, IppsH
    /* test states ID */
    IPP_BADARG_RET(!HMAC_VALID_ID(pSrcCtx), ippStsContextMatchErr);
 
-   /* copy HMAC state */
-   CopyBlock(pSrcCtx, pDstCtx, sizeof(IppsHMACState_rmf));
+   /* copy HMAC state without Hash context */
+   CopyBlock(pSrcCtx, pDstCtx, (int)(IPP_UINT_PTR(&HASH_CTX(pSrcCtx)) - IPP_UINT_PTR(pSrcCtx)));
+   HMAC_SET_CTX_ID(pDstCtx);
+   /* copy Hash context separately */
+   ippsHashDuplicate_rmf(&HASH_CTX(pSrcCtx), &HASH_CTX(pDstCtx));
+
    return ippStsNoErr;
 }
 
@@ -403,9 +426,10 @@ IPPFUN(IppStatus, ippsHMACMessage_rmf,(const Ipp8u* pMsg, int msgLen,
    IPP_BADARG_RET(0>=mdLen || mdLen>pMethod->hashLen, ippStsLengthErr);
 
    {
-      IppsHMACState_rmf ctx;
-      IppStatus sts = ippsHMACInit_rmf(pKey, keyLen, &ctx, pMethod);
-      if(ippStsNoErr!=sts) goto exit;
+      __ALIGN8 IppsHMACState_rmf ctx;
+      IppStatus sts;
+
+      ippsHMACInit_rmf(pKey, keyLen, &ctx, pMethod);
 
       sts = ippsHashUpdate_rmf(pMsg,msgLen, &HASH_CTX(&ctx));
       if(ippStsNoErr!=sts) goto exit;

@@ -26,7 +26,6 @@
 
 #include "owndefs.h"
 #include "owncp.h"
-#include "pcpscramble.h"
 #include "pcpngrsa.h"
 #include "pcpngrsamontstuff.h"
 
@@ -34,13 +33,13 @@
 /*
 // Montgomery engine preparation (GetSize/init/Set)
 */
-void rsaMontExpGetSize(int maxLen32, int* pSize)
+void rsaMontExpGetSize (int maxLen32, int* pSize)
 {
     int size = 0;
     int maxBitSize = maxLen32 << 5;
     gsModEngineGetSize(maxBitSize, MOD_ENGINE_RSA_POOL_SIZE, &size);
 
-    *pSize = size + MONT_ALIGNMENT;
+    *pSize = size;
 }
 
 
@@ -51,73 +50,65 @@ void rsaMontExpGetSize(int maxLen32, int* pSize)
 //    dataT[nsM]     copy of base (in case of inplace operation)
 //    product[nsM*2]
 */
-cpSize gsMontExpBin_BNU(BNU_CHUNK_T* dataY,
-                  const BNU_CHUNK_T* dataX, cpSize nsX,
-                  const BNU_CHUNK_T* dataE, cpSize nsE,
-                        gsModEngine* pMont,
-                        BNU_CHUNK_T* pBuffer)
+cpSize gsMontExpBin_BNU (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize bitsizeE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer)
 {
-   cpSize nsM = MOD_LEN(pMont);
+    cpSize nsM = MOD_LEN(pMont);
+    cpSize nsE = BITS_BNU_CHUNK(bitsizeE);
 
-   /*
-   // test for special cases:
-   //    x^0 = 1
-   //    0^e = 0
-   */
-   if( cpEqu_BNU_CHUNK(dataE, nsE, 0) ) {
-      COPY_BNU(dataY, MOD_MNT_R(pMont), nsM);
-   }
-   else if( cpEqu_BNU_CHUNK(dataX, nsX, 0) ) {
-      ZEXPAND_BNU(dataY, 0, nsM);
-   }
+    /*
+    // test for special cases:
+    //    x^0 = 1
+    //    0^e = 0
+    */
+    if (cpEqu_BNU_CHUNK(dataE, nsE, 0)) {
+        COPY_BNU(dataY, MOD_MNT_R(pMont), nsM);
+    }
+    else if (cpEqu_BNU_CHUNK(dataX, nsX, 0)) {
+        ZEXPAND_BNU(dataY, 0, nsM);
+    }
 
-   /* general case */
-   else {
-      /* allocate buffers */
-      BNU_CHUNK_T* dataT = pBuffer;
+    /* general case */
+    else {
+        /* allocate buffers */
+        BNU_CHUNK_T* dataT = pBuffer;
 
-      /* copy and expand base to the modulus length */
-      ZEXPAND_COPY_BNU(dataT, nsM, dataX, nsX);
-      /* convert base to Montgomery domain */
-      MOD_METHOD( pMont )->encode(dataT, dataT, (gsModEngine*)pMont);
-      /* and copy */
-      COPY_BNU(dataY, dataT, nsM);
+        /* copy and expand base to the modulus length */
+        ZEXPAND_COPY_BNU(dataT, nsM, dataX, nsX);
+        /* copy */
+        COPY_BNU(dataY, dataT, nsM);
 
-      FIX_BNU(dataE, nsE);
+        FIX_BNU(dataE, nsE);
 
-      /* execute most significant part pE */
-      {
-         BNU_CHUNK_T eValue = dataE[nsE-1];
-         int n = cpNLZ_BNU(eValue)+1;
+        /* execute most significant part pE */
+        {
+            BNU_CHUNK_T eValue = dataE[nsE - 1];
+            int n = cpNLZ_BNU(eValue) + 1;
 
-         eValue <<= n;
-         for(; n<BNU_CHUNK_BITS; n++, eValue<<=1) {
-            /* squaring R = R*R mod Modulus */
-            MOD_METHOD( pMont )->sqr(dataY, dataY, pMont);
-            /* and multiply R = R*X mod Modulus */
-            if(eValue & ((BNU_CHUNK_T)1<<(BNU_CHUNK_BITS-1)))
-               MOD_METHOD( pMont )->mul(dataY, dataY, dataT, pMont);
-         }
-
-         /* execute rest bits of E */
-         for(--nsE; nsE>0; nsE--) {
-            eValue = dataE[nsE-1];
-
-            for(n=0; n<BNU_CHUNK_BITS; n++, eValue<<=1) {
-               /* squaring: R = R*R mod Modulus */
-               MOD_METHOD( pMont )->sqr(dataY, dataY, pMont);
-
-               if(eValue & ((BNU_CHUNK_T)1<<(BNU_CHUNK_BITS-1)))
-                  MOD_METHOD( pMont )->mul(dataY, dataY, dataT, pMont);
+            eValue <<= n;
+            for (; n<BNU_CHUNK_BITS; n++, eValue <<= 1) {
+                /* squaring R = R*R mod Modulus */
+                MOD_METHOD(pMont)->sqr(dataY, dataY, pMont);
+                /* and multiply R = R*X mod Modulus */
+                if (eValue & ((BNU_CHUNK_T)1 << (BNU_CHUNK_BITS - 1)))
+                    MOD_METHOD(pMont)->mul(dataY, dataY, dataT, pMont);
             }
-         }
-      }
 
-      /* convert result back to regular domain */
-      MOD_METHOD( pMont )->decode(dataY, dataY, pMont);
-   }
+            /* execute rest bits of E */
+            for (--nsE; nsE>0; nsE--) {
+                eValue = dataE[nsE - 1];
 
-   return nsM;
+                for (n = 0; n<BNU_CHUNK_BITS; n++, eValue <<= 1) {
+                    /* squaring: R = R*R mod Modulus */
+                    MOD_METHOD(pMont)->sqr(dataY, dataY, pMont);
+
+                    if (eValue & ((BNU_CHUNK_T)1 << (BNU_CHUNK_BITS - 1)))
+                        MOD_METHOD(pMont)->mul(dataY, dataY, dataT, pMont);
+                }
+            }
+        }
+    }
+
+    return nsM;
 }
 
 /*
@@ -128,88 +119,56 @@ cpSize gsMontExpBin_BNU(BNU_CHUNK_T* dataY,
 //    dataT[nsM]
 //    product[nsM*2]
 */
-cpSize gsMontExpBin_BNU_sscm(BNU_CHUNK_T* dataY,
-                  const BNU_CHUNK_T* dataX, cpSize nsX,
-                  const BNU_CHUNK_T* dataE, cpSize nsE,
-                        gsModEngine* pMont,
-                        BNU_CHUNK_T* pBuffer)
+cpSize gsMontExpBin_BNU_sscm (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize bitsizeE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer)
 {
-   cpSize nsM = MOD_LEN(pMont);
 
-   /*
-   // test for special cases:
-   //    x^0 = 1
-   //    0^e = 0
-   */
-   if( cpEqu_BNU_CHUNK(dataE, nsE, 0) ) {
-      COPY_BNU(dataY, MOD_MNT_R(pMont), nsM);
-   }
-      else if( cpEqu_BNU_CHUNK(dataX, nsX, 0) ) {
-      ZEXPAND_BNU(dataY, 0, nsM);
-   }
+    cpSize nsM = MOD_LEN(pMont);
+    cpSize nsE = BITS_BNU_CHUNK(bitsizeE);
 
-   /* general case */
-   else {
+    /*
+    // test for special cases:
+    //    x^0 = 1
+    //    0^e = 0
+    */
+    if (cpEqu_BNU_CHUNK(dataE, nsE, 0)) {
+        COPY_BNU(dataY, MOD_MNT_R(pMont), nsM);
+    }
+    else if (cpEqu_BNU_CHUNK(dataX, nsX, 0)) {
+        ZEXPAND_BNU(dataY, 0, nsM);
+    }
+
+    /* general case */
+    else {
 
       /* allocate buffers */
-      //BNU_CHUNK_T* sscmBuffer = pBuffer;
-      //BNU_CHUNK_T* dataT = sscmBuffer+nsM;
       BNU_CHUNK_T* dataT = pBuffer;
       BNU_CHUNK_T* sscmB = dataT + nsM;
 
-      cpSize i;
-      BNU_CHUNK_T mask_pattern;
-
-      /* execute most significant part pE */
-      BNU_CHUNK_T eValue = dataE[nsE-1];
-      int j = BNU_CHUNK_BITS - cpNLZ_BNU(eValue)-1;
-
-      int back_step = 0;
+      /* mont(1) */
+      BNU_CHUNK_T* pR = MOD_MNT_R(pMont);
 
       /* copy and expand base to the modulus length */
-      ZEXPAND_COPY_BNU(dataT, nsM, dataX, nsX);
-      /* convert base to Montgomery domain */
-      MOD_METHOD( pMont )->encode(dataT, dataT, (gsModEngine*)pMont);
-      /* and copy */
-      COPY_BNU(dataY, dataT, nsM);
+       ZEXPAND_COPY_BNU(dataT, nsM, dataX, nsX);
+       /* init result */
+       COPY_BNU(dataY, MOD_MNT_R(pMont), nsM);
 
-      for(j-=1; j>=0; j--) {
-         mask_pattern = (BNU_CHUNK_T)(back_step-1);
+      /* execute bits of E */
+      for (; nsE>0; nsE--) {
+         BNU_CHUNK_T eValue = dataE[nsE-1];
 
-         /* safeBuffer = (Y[] and mask_pattern) or (X[] and ~mask_pattern) */
-         for(i=0; i<nsM; i++)
-            sscmB[i] = (dataY[i] & mask_pattern) | (dataT[i] & ~mask_pattern);
+         int n;
+         for(n=BNU_CHUNK_BITS; n>0; n--) {
+            /* sscmB = ( msb(eValue) )? X : mont(1) */
+            BNU_CHUNK_T mask = cpIsMsb_ct(eValue);
+            eValue <<= 1;
+            cpMaskedCopyBNU_ct(sscmB, mask, dataT, pR, nsM);
 
-         /* squaring/multiplication: R = R*T mod Modulus */
-         MOD_METHOD( pMont )->mul(dataY, dataY, sscmB, pMont);
-
-         /* update back_step and j */
-         back_step = ((eValue>>j) & 0x1) & (back_step^1);
-         j += back_step;
-      }
-
-      /* execute rest bits of E */
-      for(--nsE; nsE>0; nsE--) {
-         eValue = dataE[nsE-1];
-
-         for(j=BNU_CHUNK_BITS-1; j>=0; j--) {
-            mask_pattern = (BNU_CHUNK_T)(back_step-1);
-
-            /* safeBuffer = (Y[] and mask_pattern) or (X[] and ~mask_pattern) */
-            for(i=0; i<nsM; i++)
-               sscmB[i] = (dataY[i] & mask_pattern) | (dataT[i] & ~mask_pattern);
-
-            /* squaring/multiplication: R = R*T mod Modulus */
-            MOD_METHOD( pMont )->mul(dataY, dataY, sscmB, pMont);
-
-            /* update back_step and j */
-            back_step = ((eValue>>j) & 0x1) & (back_step^1);
-            j += back_step;
+            /* squaring Y = Y^2 */
+            MOD_METHOD(pMont)->sqr(dataY, dataY, pMont);
+            /* and multiplication: Y = Y * sscmB */
+            MOD_METHOD(pMont)->mul(dataY, dataY, sscmB, pMont);
          }
       }
-
-      /* convert result back to regular domain */
-      MOD_METHOD( pMont )->decode(dataY, dataY, pMont);
    }
 
    return nsM;
@@ -224,19 +183,19 @@ cpSize gsMontExpBin_BNU_sscm(BNU_CHUNK_T* dataY,
 /*
 // "safe" fixed-size window montgomery exponentiation
 //
+// - input/output are in Montgomery Domain
+// - possible inplace mode
+//
 // scratch buffer structure:
-//    dataT[nsM]
-//    dataE[nsM+1]
-//    product[nsM*2]
-//    precomutation resource[(1<<w)nsM]
+//    precomuted table of multipliers[(1<<w)*nsM]
+//    RR[nsM]   tmp result if inplace operation
+//    TT[nsM]  unscrmbled table entry
+//    EE[nsM+1] power expasin
 */
-cpSize gsMontExpWin_BNU_sscm(BNU_CHUNK_T* dataY,
-                       const BNU_CHUNK_T* dataX, cpSize nsX,
-                       const BNU_CHUNK_T* dataExp, cpSize nsE,
-                             gsModEngine* pMont,
-                             BNU_CHUNK_T* pBuffer)
+cpSize gsMontExpWin_BNU_sscm (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataExp, cpSize bitsizeE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer)
 {
    cpSize nsM = MOD_LEN(pMont);
+   cpSize nsE = BITS_BNU_CHUNK(bitsizeE);
 
    /*
    // test for special cases:
@@ -252,126 +211,263 @@ cpSize gsMontExpWin_BNU_sscm(BNU_CHUNK_T* dataY,
 
    /* general case */
    else {
-      cpSize bitsizeE = BITSIZE_BNU(dataExp, nsE);
-      cpSize bitsizeEwin = gsMontExp_WinSize(bitsizeE);
-      cpSize nPrecomute= 1<<bitsizeEwin;
-      BNU_CHUNK_T mask = nPrecomute -1;
-      cpSize chunkSize = CACHE_LINE_SIZE/nPrecomute;
+      cpSize winSize = gsMontExp_WinSize(bitsizeE);
+      cpSize nPrecomute= 1<<winSize;
+      BNU_CHUNK_T mask = (BNU_CHUNK_T)(nPrecomute -1);
       int n;
 
       BNU_CHUNK_T* pTable = (BNU_CHUNK_T*)(IPP_ALIGNED_PTR((pBuffer), CACHE_LINE_SIZE));
-      BNU_CHUNK_T* dataT = pTable + gsPrecompResourcelen(nPrecomute, nsM);
-      BNU_CHUNK_T* dataE = dataT + nsM;
+      BNU_CHUNK_T* dataTT = pTable + gsGetScrambleBufferSize(nsM, winSize);
+      BNU_CHUNK_T* dataRR = dataTT + nsM;
+      BNU_CHUNK_T* dataEE = dataRR;
 
       /* copy and expand base to the modulus length */
-      ZEXPAND_COPY_BNU(dataY, nsM, dataX, nsX);
-      /* convert base to Montgomery domain */
-      MOD_METHOD( pMont )->encode(dataY, dataY, (gsModEngine*)pMont);
+      ZEXPAND_COPY_BNU(dataTT, nsM, dataX, nsX);
 
       /* initialize recource */
-      #if defined(GS_DEBUG)
-      {
-         if(0 != IPP_BYTES_TO_ALIGN(pResource, 64))
-            printf("gsMontExpWin_BNU_sscm(): alignment test fail!!\n");
-      }
-      #endif
-      cpScramblePut(((Ipp8u*)pTable)+0, chunkSize, (Ipp32u*)MOD_MNT_R(pMont), nsM*sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
-      COPY_BNU(dataT, dataY, nsM);
-      cpScramblePut(((Ipp8u*)pTable)+chunkSize, chunkSize, (Ipp32u*)dataT, nsM*sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
+      gsScramblePut(pTable, 0, MOD_MNT_R(pMont), nsM, winSize);
+      COPY_BNU(dataRR, dataTT, nsM);
+      gsScramblePut(pTable, 1, dataTT, nsM, winSize);
       for(n=2; n<nPrecomute; n++) {
-         MOD_METHOD( pMont )->mul(dataT, dataY, dataT, pMont);
-         cpScramblePut(((Ipp8u*)pTable)+n*chunkSize, chunkSize, (Ipp32u*)dataT, nsM*sizeof(BNU_CHUNK_T)/sizeof(Ipp32u));
+         MOD_METHOD( pMont )->mul(dataTT, dataTT, dataRR, pMont);
+         gsScramblePut(pTable, n, dataTT, nsM, winSize);
       }
 
       /* expand exponent*/
-      ZEXPAND_COPY_BNU(dataE, nsE+1, dataExp, nsE);
-      bitsizeE = ((bitsizeE+bitsizeEwin-1)/bitsizeEwin) *bitsizeEwin;
+      ZEXPAND_COPY_BNU(dataEE, nsM+1, dataExp, nsE);
+      bitsizeE = ((bitsizeE+winSize-1)/winSize) *winSize;
 
       /* exponentiation */
       {
          /* position of the 1-st (left) window */
-         int eBit = bitsizeE-bitsizeEwin;
+         int eBit = bitsizeE-winSize;
 
          /* extract 1-st window value */
-         Ipp32u eChunk = *((Ipp32u*)((Ipp16u*)dataE + eBit/BITSIZE(Ipp16u)));
+         Ipp32u eChunk = *((Ipp32u*)((Ipp16u*)dataEE + eBit/BITSIZE(Ipp16u)));
          int shift = eBit & 0xF;
-         Ipp32u windowVal = (eChunk>>shift) &mask;
+         Ipp32u winVal = (eChunk>>shift) &mask;
 
          /* initialize result */
-         cpScrambleGet((Ipp32u*)dataY, nsM*sizeof(BNU_CHUNK_T)/sizeof(Ipp32u), ((Ipp8u*)pTable)+windowVal*chunkSize, chunkSize);
+         gsScrambleGet_sscm(dataY, nsM, pTable, (int)winVal, winSize);
 
-         for(eBit-=bitsizeEwin; eBit>=0; eBit-=bitsizeEwin) {
+         for(eBit-=winSize; eBit>=0; eBit-=winSize) {
             /* do square window times */
-            for(n=0,windowVal=0; n<bitsizeEwin; n++) {
+            for(n=0,winVal=0; n<winSize; n++) {
                MOD_METHOD( pMont )->sqr(dataY, dataY, pMont);
             }
 
             /* extract next window value */
-            eChunk = *((Ipp32u*)((Ipp16u*)dataE + eBit/BITSIZE(Ipp16u)));
+            eChunk = *((Ipp32u*)((Ipp16u*)dataEE + eBit/BITSIZE(Ipp16u)));
             shift = eBit & 0xF;
-            windowVal = (eChunk>>shift) &mask;
+            winVal = (eChunk>>shift) &mask;
 
             /* exptact precomputed value and muptiply */
-            cpScrambleGet((Ipp32u*)dataT, nsM*sizeof(BNU_CHUNK_T)/sizeof(Ipp32u), ((Ipp8u*)pTable)+windowVal*chunkSize, chunkSize);
+            gsScrambleGet_sscm(dataTT, nsM, pTable, (int)winVal, winSize);
 
-            MOD_METHOD( pMont )->mul(dataY, dataY, dataT, pMont);
+            MOD_METHOD( pMont )->mul(dataY, dataY, dataTT, pMont);
          }
-
       }
-
-      /* convert result back to regular domain */
-      MOD_METHOD( pMont )->decode(dataY, dataY, pMont);
    }
 
    return nsM;
 }
 #endif
 
+cpSize gsMontExpWinBuffer (int modulusBits)
+{
+   cpSize w = gsMontExp_WinSize(modulusBits);
+   cpSize nsM = BITS_BNU_CHUNK(modulusBits);
+
+   cpSize bufferNum = CACHE_LINE_SIZE/((Ipp32s)sizeof(BNU_CHUNK_T))
+                    + gsGetScrambleBufferSize(nsM, w) /* pre-computed table */
+                    + nsM                             /* tmp unscrambled table entry */
+                    + nsM;                            /* zero expanded exponent | "masked" multipler (X|1) */
+   return bufferNum;
+}
+
+/*
+// "safe" fixed-size window exponentiation
+// - input/output are in Regular Domain
+// - possible inplace mode
+*/
+cpSize gsModExpWin_BNU_sscm (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataExp, cpSize bitsizeE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer)
+{
+   cpSize nsM = MOD_LEN(pMont);
+
+   /* copy and expand base to the modulus length */
+   ZEXPAND_COPY_BNU(dataY, nsM, dataX, nsX);
+
+   /* convert base to Montgomery domain */
+   MOD_METHOD(pMont)->encode(dataY, dataY, pMont);
+
+   /* exponentiation */
+   gsMontExpWin_BNU_sscm(dataY, dataY, nsM, dataExp, bitsizeE, pMont, pBuffer);
+
+   /* convert result back to regular domain */
+   MOD_METHOD(pMont)->decode(dataY, dataY, pMont);
+
+   return nsM;
+}
+
 /*
 // definition of RSA exponentiation (PX/GPR based)
 */
-cpSize gsPubBuffer_gpr(int modulusBits)
+
+gsMethod_RSA* gsMethod_RSA_gpr_private (void)
+{
+   static gsMethod_RSA m = {
+      MIN_RSA_SIZE, MAX_RSA_SIZE,   /* RSA range */
+
+      /* private key exponentiation: private, window, gpr */
+      gsMontExpWinBuffer,
+      #if !defined(_USE_WINDOW_EXP_)
+      gsModExpBin_BNU_sscm
+      #else
+      gsModExpWin_BNU_sscm
+      #endif
+      , NULL
+   };
+   return &m;
+}
+
+cpSize gsMontExpBinBuffer (int modulusBits)
 {
    cpSize nsM = BITS_BNU_CHUNK(modulusBits);
    cpSize bufferNum = nsM;
    return bufferNum;
 }
-static cpSize gsPrvBuffer_gpr(int modulusBits)
+
+/*
+// "fast" binary montgomery exponentiation
+//
+// - input/output are in Regular Domain
+// - possible inplace mode
+//
+// scratch buffer structure:
+//    dataT[nsM]     copy of base (in case of inplace operation)
+*/
+cpSize gsModExpBin_BNU (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize bitsizeE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer)
 {
-   cpSize w = gsMontExp_WinSize(modulusBits);
-   //cpSize tbl_num = (1==w)? 0 : (1<<w);
-   cpSize tbl_num = (1<<w);
+   cpSize nsM = MOD_LEN(pMont);
+   
+   /* copy and expand base to the modulus length */
+   ZEXPAND_COPY_BNU(dataY, nsM, dataX, nsX);
+   /* convert base to Montgomery domain */
+   MOD_METHOD(pMont)->encode(dataY, dataY, pMont);
 
-   cpSize nsM = BITS_BNU_CHUNK(modulusBits);
+   /* exponentiation */
+   gsMontExpBin_BNU(dataY, dataY, nsM, dataE, bitsizeE, pMont, pBuffer);
 
-   cpSize bufferNum = gsPrecompResourcelen(tbl_num, nsM) /* pre-computed table */
-                    + nsM                                /* copy of base X */
-                    + nsM;                               /* zero expanded exponent | "masked" multipler (X|1) */
-   //#if !defined(_USE_WINDOW_EXP_)
-   //bufferNum += nsM;
-   //#endif
+   /* convert result back to regular domain */
+   MOD_METHOD(pMont)->decode(dataY, dataY, pMont);
 
-   return bufferNum;
+   return nsM;
 }
 
-gsMethod_RSA* gsMethod_RSA_gpr_public(void)
+gsMethod_RSA* gsMethod_RSA_gpr_public (void)
 {
    static gsMethod_RSA m = {
-      MIN_RSA_SIZE, MAX_RSA_SIZE,      // appication area
+      MIN_RSA_SIZE, MAX_RSA_SIZE,   /* RSA range */
 
-      gsPubBuffer_gpr,
-      gsPrvBuffer_gpr,
-
-      gsMontExpBin_BNU,                // public key exp
-#ifdef _SLIMBOOT_OPT
-      NULL,
-#else
-      #if defined(_USE_WINDOW_EXP_)
-      gsMontExpWin_BNU_sscm            // window private key exp
-      #else
-      gsMontExpBin_BNU_sscm,           // binary private key exp
-      #endif
-#endif
+      /* public key exponentiation: public, binary, gpr */
+      gsMontExpBinBuffer,
+      gsModExpBin_BNU,
+      NULL
    };
    return &m;
+}
+
+int gsGetScrambleBufferSize (int modulusLen, int w)
+{
+   /* size of resource to store 2^w values of modulusLen*sizeof(BNU_CHUNK_T) each */
+   int size = (1<<w) * modulusLen * (Ipp32s)sizeof(BNU_CHUNK_T);
+   /* padd it up to CACHE_LINE_SIZE */
+   size += (CACHE_LINE_SIZE - (size % CACHE_LINE_SIZE)) %CACHE_LINE_SIZE;
+   return size/(Ipp32s)sizeof(BNU_CHUNK_T);
+}
+
+void gsScramblePut (BNU_CHUNK_T* tbl, int idx, const BNU_CHUNK_T* val, int vLen, int w)
+{
+   int width = 1 << w;
+   int i, j;
+   for(i=0, j=idx; i<vLen; i++, j+= width) {
+      tbl[j] = val[i];
+   }
+}
+
+void gsScrambleGet (BNU_CHUNK_T* val, int vLen, const BNU_CHUNK_T* tbl, int idx, int w)
+{
+   int width = 1 << w;
+   int i, j;
+   for(i=0, j=idx; i<vLen; i++, j+= width) {
+      val[i] = tbl[j];
+   }
+}
+
+void gsScrambleGet_sscm (BNU_CHUNK_T* val, int vLen, const BNU_CHUNK_T* tbl, int idx, int w)
+{
+   BNU_CHUNK_T mask[1<<MAX_W];
+
+   int width = 1 << w;
+
+   int n, i;
+   switch (w) {
+   case 6:
+      for(n=0; n<(1<<6); n++)
+         mask[n] = cpIsEqu_ct((BNU_CHUNK_T)n, (BNU_CHUNK_T)idx);
+      break;
+   case 5:
+      for(n=0; n<(1<<5); n++)
+         mask[n] = cpIsEqu_ct((BNU_CHUNK_T)n, (BNU_CHUNK_T)idx);
+      break;
+   case 4:
+      for(n=0; n<(1<<4); n++)
+         mask[n] = cpIsEqu_ct((BNU_CHUNK_T)n, (BNU_CHUNK_T)idx);
+      break;
+   case 3:
+      for(n=0; n<(1<<3); n++)
+         mask[n] = cpIsEqu_ct((BNU_CHUNK_T)n, (BNU_CHUNK_T)idx);
+      break;
+   case 2:
+      for(n=0; n<(1<<2); n++)
+         mask[n] = cpIsEqu_ct((BNU_CHUNK_T)n, (BNU_CHUNK_T)idx);
+      break;
+   default:
+      mask[0] = cpIsEqu_ct(0, (BNU_CHUNK_T)idx);
+      mask[1] = cpIsEqu_ct(1, (BNU_CHUNK_T)idx);
+      break;
+   }
+
+   for(i=0; i<vLen; i++, tbl += width) {
+      BNU_CHUNK_T acc = 0;
+
+      switch (w) {
+      case 6:
+         for(n=0; n<(1<<6); n++)
+            acc |= tbl[n] & mask[n];
+         break;
+      case 5:
+         for(n=0; n<(1<<5); n++)
+            acc |= tbl[n] & mask[n];
+         break;
+      case 4:
+         for(n=0; n<(1<<4); n++)
+            acc |= tbl[n] & mask[n];
+         break;
+      case 3:
+         for(n=0; n<(1<<3); n++)
+            acc |= tbl[n] & mask[n];
+         break;
+      case 2:
+         for(n=0; n<(1<<2); n++)
+            acc |= tbl[n] & mask[n];
+         break;
+      default:
+         acc |= tbl[0] & mask[0];
+         acc |= tbl[1] & mask[1];
+         break;
+      }
+
+      val[i] = acc;
+   }
 }

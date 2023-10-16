@@ -41,9 +41,11 @@
 //    ippStsNullPtrErr           NULL == pOctStr
 //                               NULL == pBN
 //
-//    ippStsLengthErr            0>strLen
+//    ippStsContextMatchErr      !BN_VALID_ID(pBN)
 //
-//    ippStsSizeErr              BN_ROOM() is enough for keep actual strLen
+//    ippStsLengthErr            0 > strLen
+//
+//    ippStsSizeErr              BN_ROOM(pBN) is enough for keep actual strLen
 //
 //    ippStsNoErr                no errors
 //
@@ -53,12 +55,11 @@
 //    pBN         pointer to the target BN
 //
 *F*/
-IPPFUN(IppStatus, ippsSetOctString_BN,(const Ipp8u* pOctStr, cpSize strLen,
+IPPFUN(IppStatus, ippsSetOctString_BN,(const Ipp8u* pOctStr, int strLen,
                                        IppsBigNumState* pBN))
 {
    IPP_BAD_PTR2_RET(pOctStr, pBN);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
 
    IPP_BADARG_RET((0>strLen), ippStsLengthErr);
@@ -70,7 +71,7 @@ IPPFUN(IppStatus, ippsSetOctString_BN,(const Ipp8u* pOctStr, cpSize strLen,
    }
 
    /* test BN size */
-   IPP_BADARG_RET((int)(sizeof(BNU_CHUNK_T)*BN_ROOM(pBN))<strLen, ippStsSizeErr);
+   IPP_BADARG_RET((int)((Ipp32s)sizeof(BNU_CHUNK_T)*BN_ROOM(pBN))<strLen, ippStsSizeErr);
    if(strLen)
       BN_SIZE(pBN) = cpFromOctStr_BNU(BN_NUMBER(pBN), pOctStr, strLen);
    else {
@@ -92,6 +93,8 @@ IPPFUN(IppStatus, ippsSetOctString_BN,(const Ipp8u* pOctStr, cpSize strLen,
 //    ippStsNullPtrErr           NULL == pOctStr
 //                               NULL == pBN
 //
+//    ippStsContextMatchErr      !BN_VALID_ID(pBN)
+//
 //    ippStsRangeErr             BN <0
 //
 //    ippStsLengthErr            strLen is enough for keep BN value
@@ -103,12 +106,11 @@ IPPFUN(IppStatus, ippsSetOctString_BN,(const Ipp8u* pOctStr, cpSize strLen,
 //    pOctStr     pointer to the target octet string
 //    strLen      octet string length
 *F*/
-IPPFUN(IppStatus, ippsGetOctString_BN,(Ipp8u* pOctStr, cpSize strLen,
+IPPFUN(IppStatus, ippsGetOctString_BN,(Ipp8u* pOctStr, int strLen,
                                        const IppsBigNumState* pBN))
 {
    IPP_BAD_PTR2_RET(pOctStr, pBN);
 
-   pBN = (IppsBigNumState*)( IPP_ALIGNED_PTR(pBN, BN_ALIGNMENT) );
    IPP_BADARG_RET(!BN_VALID_ID(pBN), ippStsContextMatchErr);
    IPP_BADARG_RET(BN_NEGATIVE(pBN), ippStsRangeErr);
    IPP_BADARG_RET((0>strLen), ippStsLengthErr);

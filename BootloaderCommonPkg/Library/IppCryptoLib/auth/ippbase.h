@@ -39,6 +39,7 @@ extern "C" {
   #define __UINT64    unsigned long long
 #endif
 
+#define IPP_COUNT_OF( obj )  (sizeof(obj)/sizeof(obj[0]))
 
 #define IPP_PI    ( 3.14159265358979323846 )  /* ANSI C does not support M_PI */
 #define IPP_2PI   ( 6.28318530717958647692 )  /* 2*pi                         */
@@ -92,14 +93,14 @@ extern "C" {
 #define IPP_ABS( a ) ( ((a) < 0) ? (-(a)) : (a) )
 
 typedef struct {
-    int    major;                     /* e.g. 1                               */
-    int    minor;                     /* e.g. 2                               */
-    int    majorBuild;                /* e.g. 3                               */
-    int    build;                     /* e.g. 10, always >= majorBuild        */
-    char  targetCpu[4];               /* corresponding to Intel(R) processor  */
-    const char* Name;                 /* e.g. "ippsw7"                        */
-    const char* Version;              /* e.g. "v1.2 Beta"                     */
-    const char* BuildDate;            /* e.g. "Jul 20 99"                     */
+    int          major;         /* e.g. 1                               */
+    int          minor;         /* e.g. 2                               */
+    int          majorBuild;    /* e.g. 3                               */
+    unsigned int revision;      /* e.g. 0xf6f5e5bc                      */
+    char         targetCpu[4];  /* corresponding to Intel® processor    */
+    const char*  Name;          /* e.g. "ippsw7"                        */
+    const char*  Version;       /* e.g. "v1.2 Beta"                     */
+    const char*  BuildDate;     /* e.g. "Jul 20 99"                     */
 } IppLibraryVersion;
 
 typedef unsigned char  Ipp8u;
@@ -149,6 +150,11 @@ typedef struct {
     Ipp64f  im;
 } Ipp64fc;
 
+typedef struct {
+    Ipp16f  re;
+    Ipp16f  im;
+} Ipp16fc;
+
 typedef enum {
    ippUndef = -1,
    ipp1u    =  0,
@@ -171,7 +177,8 @@ typedef enum {
    ipp64s   = 17,
    ipp64sc  = 18,
    ipp64f   = 19,
-   ipp64fc  = 20
+   ipp64fc  = 20,
+   ipp16fc  = 21 /* This is necessary for TS */
 } IppDataType;
 
 typedef enum {

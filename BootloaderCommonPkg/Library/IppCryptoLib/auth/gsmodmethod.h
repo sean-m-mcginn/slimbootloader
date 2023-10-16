@@ -17,26 +17,23 @@
 #if !defined(_GS_MOD_METHOD_H)
 #define _GS_MOD_METHOD_H
 
-//#include "owndefs.h"
 #include "owncp.h"
-
 #include "pcpbnuimpl.h"
-//#include "gsmodstuff.h"
 
 typedef struct _gsModEngine gsEngine;
 
 /* modular arith methods */
-typedef BNU_CHUNK_T* (*mod_encode)(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_decode)(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_red)   (BNU_CHUNK_T* pR,       BNU_CHUNK_T* pA, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_sqr)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_mul)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_add)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_sub)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_neg)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_div2)  (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_mul2)  (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
-typedef BNU_CHUNK_T* (*mod_mul3)  (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_encode) (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_decode) (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_red)    (BNU_CHUNK_T* pR,       BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_sqr)    (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_mul)    (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_add)    (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_sub)    (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_neg)    (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_div2)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_mul2)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
+typedef BNU_CHUNK_T* (*mod_mul3)   (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, gsEngine* pMA);
 
 typedef struct _gsModMethod {
    mod_encode encode;
@@ -52,44 +49,25 @@ typedef struct _gsModMethod {
    mod_mul3 mul3;
 } gsModMethod;
 
-__INLINE BNU_CHUNK_T cpIsZero(BNU_CHUNK_T x)
-{  return x==0; }
-__INLINE BNU_CHUNK_T cpIsNonZero(BNU_CHUNK_T x)
-{  return x!=0; }
-__INLINE BNU_CHUNK_T cpIsOdd(BNU_CHUNK_T x)
-{  return x&1; }
-__INLINE BNU_CHUNK_T cpIsEven(BNU_CHUNK_T x)
-{  return 1-cpIsOdd(x); }
-
-/* dst[] = (flag)? src[] : dst[] */
-__INLINE void cpMaskMove_gs(BNU_CHUNK_T* dst, const BNU_CHUNK_T* src, int len, BNU_CHUNK_T moveFlag)
-{
-   BNU_CHUNK_T srcMask = 0-cpIsNonZero(moveFlag);
-   BNU_CHUNK_T dstMask = ~srcMask;
-   int n;
-   for(n=0; n<len; n++)
-      dst[n] = (src[n] & srcMask) ^  (dst[n] & dstMask);
-}
-
 /* common available pre-defined methos */
-#define      gsModArith OWNAPI(gsModArith)
-gsModMethod* gsModArith(void);
+#define gsModArith OWNAPI(gsModArith)
+gsModMethod* gsModArith (void);
 
 /* available pre-defined methos for RSA */
-#define      gsModArithRSA OWNAPI(gsModArithRSA)
-gsModMethod* gsModArithRSA(void);
+#define gsModArithRSA OWNAPI(gsModArithRSA)
+gsModMethod* gsModArithRSA (void);
 
 /* available pre-defined methos for ippsMont* */
-#define      gsModArithMont OWNAPI(gsModArithMont)
-gsModMethod* gsModArithMont(void);
+#define gsModArithMont OWNAPI(gsModArithMont)
+gsModMethod* gsModArithMont (void);
 
 /* available pre-defined methos for DLP * */
-#define      gsModArithDLP OWNAPI(gsModArithDLP)
-gsModMethod* gsModArithDLP(void);
+#define gsModArithDLP OWNAPI(gsModArithDLP)
+gsModMethod* gsModArithDLP (void);
 
 /* available pre-defined common methos for GF over prime * */
-#define      gsArithGFp OWNAPI(gsArithGFp)
-gsModMethod* gsArithGFp(void);
+#define gsArithGFp OWNAPI(gsArithGFp)
+gsModMethod* gsArithGFp (void);
 
 /* ... and etc ... */
 

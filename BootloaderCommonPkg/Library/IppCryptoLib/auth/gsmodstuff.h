@@ -36,7 +36,8 @@ typedef struct _gsModEngine
    int                  modLen;        /* length of modulus  (BNU_CHUNK_T) */
    int                  modLen32;      /* length of modulus  (Ipp32u)      */
    int                  peLen;         /* length of pool element (BNU_CHUNK_T) */
-   const gsModMethod*   method;        /* modular arithmetic methods       */
+   const gsModMethod*   method;        /* modular arithmetic methods - regular radix */
+   const void*          method_alt;    /* modular arithmetic methods - alternative radix implementation */
    BNU_CHUNK_T*         pModulus;      /* modulus                          */
    BNU_CHUNK_T          k0;            /* low word of (1/modulus) mod R    */
    BNU_CHUNK_T*         pMontR;        /* mont_enc(1)                      */
@@ -56,6 +57,7 @@ typedef struct _gsModEngine
 #define MOD_LEN32(eng)       ((eng)->modLen32)
 #define MOD_PELEN(eng)       ((eng)->peLen)
 #define MOD_METHOD(eng)      ((eng)->method)
+#define MOD_METHOD_ALT(eng)  ((eng)->method_alt)
 #define MOD_MODULUS(eng)     ((eng)->pModulus)
 #define MOD_MNT_FACTOR(eng)  ((eng)->k0)
 #define MOD_MNT_R(eng)       ((eng)->pMontR)
@@ -73,14 +75,12 @@ typedef struct _gsModEngine
 /*
 // size of context and it initialization
 */
-#define   gsModEngineGetSize OWNAPI(gsModEngineGetSize)
-IppStatus gsModEngineGetSize(int modulusBitSIze, int numpe, int* pSize);
-
-#define   gsModEngineInit OWNAPI(gsModEngineInit)
-IppStatus gsModEngineInit(gsModEngine* pME, const Ipp32u* pModulus, int modulusBitSize, int numpe, const gsModMethod* method);
-
-#define     gsMontFactor OWNAPI(gsMontFactor)
-BNU_CHUNK_T gsMontFactor(BNU_CHUNK_T m0);
+#define gsModEngineInit OWNAPI(gsModEngineInit)
+   IppStatus gsModEngineInit (gsModEngine* pME, const Ipp32u* pModulus, int modulusBitSize, int numpe, const gsModMethod* method);
+#define gsModEngineGetSize OWNAPI(gsModEngineGetSize)
+   IppStatus gsModEngineGetSize (int modulusBitSIze, int numpe, int* pSize);
+#define gsMontFactor OWNAPI(gsMontFactor)
+   BNU_CHUNK_T gsMontFactor (BNU_CHUNK_T m0);
 
 
 /*
@@ -134,33 +134,30 @@ __INLINE void gsModPoolFree(gsModEngine* pME, int poolReq)
 }
 
 /* return pointer to the top pool buffer */
-#define      gsModGetPool OWNAPI(gsModGetPool)
-BNU_CHUNK_T* gsModGetPool(gsModEngine* pME);
-
+#define gsModGetPool OWNAPI(gsModGetPool)
+   BNU_CHUNK_T* gsModGetPool (gsModEngine* pME);
 /*
 // advanced operations
 */
-typedef int (*alm_inv)(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA);
+typedef int (*alm_inv) (BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA);
 
 #define alm_mont_inv OWNAPI(alm_mont_inv)
-int     alm_mont_inv(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA);
-
+   int alm_mont_inv (BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA);
 #define alm_mont_inv_ct OWNAPI(alm_mont_inv_ct)
-int     alm_mont_inv_ct(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA);
+   int alm_mont_inv_ct (BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA);
+#define gs_mont_inv OWNAPI(gs_mont_inv)
+   BNU_CHUNK_T* gs_mont_inv (BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA, alm_inv invf);
+#define gs_inv OWNAPI(gs_inv)
+   BNU_CHUNK_T* gs_inv (BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA, alm_inv invf);
 
-#define      gs_mont_inv OWNAPI(gs_mont_inv)
-BNU_CHUNK_T* gs_mont_inv(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA, alm_inv invf);
-
-#define      gs_inv OWNAPI(gs_inv)
-BNU_CHUNK_T* gs_inv(BNU_CHUNK_T* pr, const BNU_CHUNK_T* pa, gsModEngine* pMA, alm_inv invf);
 
 /*
 // Pack/Unpack methods
 */
 #define gsPackModEngineCtx OWNAPI(gsPackModEngineCtx)
-void    gsPackModEngineCtx(const gsModEngine* pCtx, Ipp8u* pBuffer);
-
+   void gsPackModEngineCtx (const gsModEngine* pCtx, Ipp8u* pBuffer);
 #define gsUnpackModEngineCtx OWNAPI(gsUnpackModEngineCtx)
-void    gsUnpackModEngineCtx(const Ipp8u* pBuffer, gsModEngine* pCtx);
+   void gsUnpackModEngineCtx (const Ipp8u* pBuffer, gsModEngine* pCtx);
+
 
 #endif /* _GS_MOD_STUFF_H */

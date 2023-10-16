@@ -1,78 +1,37 @@
 /*******************************************************************************
-* Copyright 2018-2020 Intel Corporation
+* Copyright (C) 2013 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
-/*
-//
+/* 
+// 
 //  Purpose:
 //     Cryptography Primitive.
 //     Internal Definitions and
 //     Internal ng RSA Function Prototypes
-//
-//
+// 
+// 
 */
 
-#if !defined(_CP_NG_RSA_MONT_STUFF_H)
-#define _CP_NG_RSA_MONT_STUFF_H
+#if !defined(_CP_NG_MONT_EXP_STUFF_H)
+#define _CP_NG_MONT_EXP_STUFF_H
 
+#include "pcpbnuimpl.h"
 #include "pcpbn.h"
-#include "pcpmulbnukara.h"
-#include "pcpmontgomery.h"
+#include "gsmodstuff.h"
 
-#define MOD_MONTGOMERY_TWO_STAGES_MUL
-
-
-/*
-// whether Karatsuba algorithm in use
-//
-// note MUL and SQR operations could have different "threshold" bounndary
-*/
-__INLINE int gsIsKaratsubaApplicable(cpSize ns, cpSize threshold)
-{
-   #if !defined(_USE_KARATSUBA_)
-   IPP_UNREFERENCED_PARAMETER(ns);
-   IPP_UNREFERENCED_PARAMETER(threshold);
-   return 0;
-   #else
-   return ns>=threshold;
-   #endif
-}
-
-/*
-// length (in BNU_CHUNK_T) of buffer for Karatsuba mul/sqr operations
-*/
-__INLINE cpSize gsKaratsubaBufferLen(cpSize ns)
-{
-   #if !defined(_USE_KARATSUBA_)
-   IPP_UNREFERENCED_PARAMETER(ns);
-   return 0;
-   #else
-   cpSize len= 0;
-   while(ns>=CP_KARATSUBA_MUL_THRESHOLD) {
-      ns = ns - ns/2;
-      len += ns*2;
-   }
-   return len;
-   #endif
-}
-
-/*
-// Montgomery engine preparation (GetSize/init/Set)
-*/
-#define gsMontGetSize OWNAPI(gsMontGetSize)
-void gsMontGetSize(IppsExpMethod method, int length, int* pSize);
 
 /*
 // optimal size of fixed window exponentiation
@@ -131,65 +90,58 @@ __INLINE void gsMontEnc_BN(IppsBigNumState* pRbn,
    BN_SIGN(pRbn) = ippBigNumPOS;
 }
 
+/* exponentiation buffer size */
+#define gsMontExpBinBuffer OWNAPI(gsMontExpBinBuffer)
+   cpSize gsMontExpBinBuffer (int modulusBits);
+#define gsMontExpWinBuffer OWNAPI(gsMontExpWinBuffer)
+   cpSize gsMontExpWinBuffer (int modulusBits);
+
+/* exponentiation prototype */
+typedef cpSize (*ngMontExp) (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
+typedef cpSize (*ngMontDualExp) (BNU_CHUNK_T* dataY[2], const BNU_CHUNK_T* dataX[2], cpSize nsX[2], const BNU_CHUNK_T* dataE[2], gsModEngine* pMont[2], BNU_CHUNK_T* pBuffer);
+
 /*
-// binary montgomery exponentiation ("fast" version)
+// "fast" and "safe" binary montgomery exponentiation ("fast" version)
 */
 #define gsMontExpBin_BNU OWNAPI(gsMontExpBin_BNU)
-cpSize gsMontExpBin_BNU(BNU_CHUNK_T* dataY,
-                  const BNU_CHUNK_T* dataX, cpSize nsX,
-                  const BNU_CHUNK_T* dataE, cpSize nsE,
-                        gsModEngine* pMont,
-                        BNU_CHUNK_T* pBuffer);
-
-/*
-// fixed-size window montgomery exponentiation ("fast" version)
-*/
-#if defined(_USE_WINDOW_EXP_)
-cpSize gsMontExpWin_BNU(BNU_CHUNK_T* pY,
-                 const BNU_CHUNK_T* pX, cpSize nsX,
-                 const BNU_CHUNK_T* dataE, cpSize nsE,
-                       gsModEngine* pMont,
-                       BNU_CHUNK_T* pBuffer);
-#endif
-
-/*
-// binary montgomery exponentiation ("safe" version)
-*/
-__INLINE cpSize gsPrecompResourcelen(int n, cpSize nsM)
-{
-//   cpSize nsR = (((sizeof(BNU_CHUNK_T)*nsM*n + (CACHE_LINE_SIZE-1)))/CACHE_LINE_SIZE)  /* num of cashe lines */
-//                *MASK_BNU_CHUNK(CACHE_LINE_SIZE*BYTESIZE);                             /* length of line in BNU_CHUNK_T */
-   cpSize nsR = sizeof(BNU_CHUNK_T)*nsM*n + (CACHE_LINE_SIZE-1);
-   nsR /=CACHE_LINE_SIZE;  /* num of cashe lines */
-   nsR *= (CACHE_LINE_SIZE/sizeof(BNU_CHUNK_T));
-   return nsR;
-}
+   cpSize gsMontExpBin_BNU (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
+#define gsModExpBin_BNU OWNAPI(gsModExpBin_BNU)
+   cpSize gsModExpBin_BNU (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
 
 #define gsMontExpBin_BNU_sscm OWNAPI(gsMontExpBin_BNU_sscm)
-cpSize gsMontExpBin_BNU_sscm(BNU_CHUNK_T* pY,
-                       const BNU_CHUNK_T* pX, cpSize nsX,
-                       const BNU_CHUNK_T* pE, cpSize nsE,
-                             gsModEngine* pMont,
-                             BNU_CHUNK_T* pBuffer);
+   cpSize gsMontExpBin_BNU_sscm (BNU_CHUNK_T* pY, const BNU_CHUNK_T* pX, cpSize nsX, const BNU_CHUNK_T* pE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
+#define gsModExpBin_BNU_sscm OWNAPI(gsModExpBin_BNU_sscm)
+   cpSize gsModExpBin_BNU_sscm (BNU_CHUNK_T* pY, const BNU_CHUNK_T* pX, cpSize nsX, const BNU_CHUNK_T* pE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
 
 /*
-// fixed-size window montgomery exponentiation ("safe" version)
+// "fast" and "safe" fixed-size window montgomery exponentiation
 */
-#if defined(_USE_WINDOW_EXP_)
+#define gsMontExpWin_BNU OWNAPI(gsMontExpWin_BNU)
+   cpSize gsMontExpWin_BNU (BNU_CHUNK_T* pY, const BNU_CHUNK_T* pX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
+#define gsModExpWin_BNU OWNAPI(gsModExpWin_BNU)
+   cpSize gsModExpWin_BNU (BNU_CHUNK_T* pY, const BNU_CHUNK_T* pX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
+
 #define gsMontExpWin_BNU_sscm OWNAPI(gsMontExpWin_BNU_sscm)
-cpSize gsMontExpWin_BNU_sscm(BNU_CHUNK_T* dataY,
-                       const BNU_CHUNK_T* dataX, cpSize nsX,
-                       const BNU_CHUNK_T* dataE, cpSize nsE,
-                             gsModEngine* pMont,
-                             BNU_CHUNK_T* pBuffer);
+   cpSize gsMontExpWin_BNU_sscm (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
+#define gsModExpWin_BNU_sscm OWNAPI(gsModExpWin_BNU_sscm)
+   cpSize gsModExpWin_BNU_sscm (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
 
-#endif
+#endif /* _CP_NG_MONT_EXP_STUFF_H */
 
+#if !defined(_GS_SCRAMBLE_H)
+#define _GS_SCRAMBLE_H
 
-#define gsPubBuffer_gpr OWNAPI(gsPubBuffer_gpr)
-cpSize  gsPubBuffer_gpr(int modulusBits);
+#include "pcpbnuimpl.h"
 
-#define       gsMethod_RSA_gpr_public OWNAPI(gsMethod_RSA_gpr_public)
-gsMethod_RSA* gsMethod_RSA_gpr_public(void);
+#define MAX_W  (6)
 
-#endif /* _CP_NG_RSA_MONT_STUFF_H */
+#define gsGetScrambleBufferSize OWNAPI(gsGetScrambleBufferSize)
+    int gsGetScrambleBufferSize (int modulusLen, int w);
+#define gsScramblePut OWNAPI(gsScramblePut)
+    void gsScramblePut (BNU_CHUNK_T* tbl, int idx, const BNU_CHUNK_T* val, int vLen, int w);
+#define gsScrambleGet OWNAPI(gsScrambleGet)
+    void gsScrambleGet (BNU_CHUNK_T* val, int vLen, const BNU_CHUNK_T* tbl, int idx, int w);
+#define gsScrambleGet_sscm OWNAPI(gsScrambleGet_sscm)
+    void gsScrambleGet_sscm (BNU_CHUNK_T* val, int vLen, const BNU_CHUNK_T* tbl, int idx, int w);
+
+#endif /* _GS_SCRAMBLE_H */

@@ -27,8 +27,6 @@
 #include "pcpbn.h"
 #include "gsmodstuff.h"
 
-//tbcd: temporary excluded: #include <assert.h>
-
 #define MONT_DEFAULT_POOL_LENGTH (6)
 
 /*
@@ -36,17 +34,17 @@
 */
 struct _cpMontgomery
 {
-   IppCtxId       idCtx;      /* Montgomery spec identifier             */
+   Ipp32u         idCtx;      /* Montgomery spec identifier             */
    cpSize         maxLen;     /* Maximum length of modulus being stored */
    gsModEngine*   pEngine;    /* Modular arith engine structure         */
 };
 
 /* accessory macros */
-#define MNT_ID(eng)       ((eng)->idCtx)
+#define MNT_SET_ID(eng)   ((eng)->idCtx = (Ipp32u)idCtxMontgomery ^ (Ipp32u)IPP_UINT_PTR(eng))
 #define MNT_ROOM(eng)     ((eng)->maxLen)
 #define MNT_ENGINE(eng)   ((eng)->pEngine)
 
-#define MNT_VALID_ID(eng) (MNT_ID((eng))==idCtxMontgomery)
+#define MNT_VALID_ID(eng) ((((eng)->idCtx) ^ (Ipp32u)IPP_UINT_PTR((eng))) == (Ipp32u)idCtxMontgomery)
 
 /* default methos */
 #define EXPONENT_METHOD    (ippBinaryMethod)
@@ -91,7 +89,8 @@ __INLINE cpSize cpMontMul_BNU_EX(BNU_CHUNK_T* pR,
    cpSize nsM = MOD_LEN( pModEngine );
    BNU_CHUNK_T* pDataR  = pR;
    BNU_CHUNK_T* pDataA  = gsModPoolAlloc(pModEngine, usedPoolLen);
-   //tbcd: temporary excluded: assert(NULL!=pDataA);
+   if(NULL == pDataA)
+      return -1;
 
    ZEXPAND_COPY_BNU(pDataA, nsM, pA, nsA);
    ZEXPAND_COPY_BNU(pDataR, nsM, pB, nsB);
@@ -204,17 +203,18 @@ __INLINE void cpMontDec_BN(IppsBigNumState* pRbn,
 /*
 // Montgomery exponentiation (binary) "fast" and "safe" versions
 */
-#define cpMontExpBin_BNU_sscm OWNAPI(cpMontExpBin_BNU_sscm)
-cpSize  cpMontExpBin_BNU_sscm(BNU_CHUNK_T* pY,
-                       const BNU_CHUNK_T* pX, cpSize nsX,
-                       const BNU_CHUNK_T* pE, cpSize nsE,
-                             gsModEngine* pModEngine);
 
 #define cpMontExpBin_BNU OWNAPI(cpMontExpBin_BNU)
 cpSize  cpMontExpBin_BNU(BNU_CHUNK_T* pY,
                    const BNU_CHUNK_T* pX, cpSize nsX,
                    const BNU_CHUNK_T* pE, cpSize nsE,
                          gsModEngine* pModEngine);
+
+#define cpMontExpBin_BNU_sscm OWNAPI(cpMontExpBin_BNU_sscm)
+cpSize  cpMontExpBin_BNU_sscm(BNU_CHUNK_T* pY,
+                       const BNU_CHUNK_T* pX, cpSize nsX,
+                       const BNU_CHUNK_T* pE, cpSize nsE,
+                             gsModEngine* pModEngine);
 
 __INLINE void cpMontExpBin_BN_sscm(IppsBigNumState* pYbn,
                              const IppsBigNumState* pXbn,
@@ -247,7 +247,6 @@ __INLINE void cpMontExpBin_BN(IppsBigNumState* pYbn,
    BN_SIZE(pYbn) = nsY;
    BN_SIGN(pYbn) = ippBigNumPOS;
 }
-
 
 /*
 // Montgomery exponentiation (fixed window)

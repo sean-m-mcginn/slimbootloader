@@ -55,6 +55,20 @@
 #pragma message ("C version of cpAdd_BNU: OFF")
 #endif
 
+/*F*
+//    Name: cpAdd_BNU
+//
+// Purpose: Addition of two BigNums.
+//
+// Returns:
+//    carry of result of add two BigNums.
+//
+// Parameters:
+//    pA    source BigNum A
+//    pB    source BigNum B
+//    pR    resultant BigNum
+//    ns    size of BigNums
+*F*/
 #if !((_IPP==_IPP_W7) || \
       (_IPP==_IPP_T7) || \
       (_IPP==_IPP_V8) || \
@@ -65,10 +79,9 @@
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8) || \
-      (_IPPLRB>=_IPPLRB_B1)) || \
+      (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpAdd_BNU_)
-BNU_CHUNK_T cpAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns)
+BNU_CHUNK_T cpAdd_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns)
 {
    BNU_CHUNK_T carry = 0;
    cpSize i;
@@ -86,6 +99,20 @@ BNU_CHUNK_T cpAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T*
 #pragma message ("C version of cpSub_BNU: OFF")
 #endif
 
+/*F*
+//    Name: cpSub_BNU
+//
+// Purpose: Subtraction of two BigNums.
+//
+// Returns:
+//    borrow of result of sub two BigNums.
+//
+// Parameters:
+//    pA    source BigNum A
+//    pB    source BigNum B
+//    pR    resultant BigNum
+//    ns    size of BigNums
+*F*/
 #if !((_IPP==_IPP_W7) || \
       (_IPP==_IPP_T7) || \
       (_IPP==_IPP_V8) || \
@@ -96,10 +123,9 @@ BNU_CHUNK_T cpAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T*
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8) || \
-      (_IPPLRB>=_IPPLRB_B1)) || \
+      (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpSub_BNU_)
-BNU_CHUNK_T cpSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns)
+BNU_CHUNK_T cpSub_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, cpSize ns)
 {
    BNU_CHUNK_T borrow = 0;
    cpSize i;
@@ -117,6 +143,20 @@ BNU_CHUNK_T cpSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T*
 #pragma message ("C version of cpInc_BNU: OFF")
 #endif
 
+/*F*
+//    Name: cpInc_BNU
+//
+// Purpose: increment BigNum.
+//
+// Returns:
+//    carry of result of inc BigNum.
+//
+// Parameters:
+//    pA    source BigNum A
+//    pR    resultant BigNum
+//    ns    size of BigNum
+//    val   carry
+*F*/
 #if !((_IPP==_IPP_W7) || \
       (_IPP==_IPP_T7) || \
       (_IPP==_IPP_V8) || \
@@ -129,7 +169,7 @@ BNU_CHUNK_T cpSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T*
       (_IPP32E>=_IPP32E_E9) || \
       (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpInc_BNU_)
-BNU_CHUNK_T cpInc_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
+BNU_CHUNK_T cpInc_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
 {
    cpSize i;
    for(i=0; i<ns && val; i++) {
@@ -144,12 +184,28 @@ BNU_CHUNK_T cpInc_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHU
 }
 #endif
 
+/*F*
+//    Name: cpDec_BNU
+//
+// Purpose: decrement BigNum.
+//
+// Returns:
+//    borrow of result of dec BigNum.
+//
+// Parameters:
+//    pA    source BigNum A
+//    pR    resultant BigNum
+//    ns    size of BigNum
+//    val   carry
+*F*/
+
 #if !((_IPP32E==_IPP32E_M7) || \
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
       (_IPP32E==_IPP32E_N8))
-BNU_CHUNK_T cpDec_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
+
+BNU_CHUNK_T cpDec_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
 {
    cpSize i;
    for(i=0; i<ns && val; i++) {
@@ -164,63 +220,6 @@ BNU_CHUNK_T cpDec_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHU
 }
 #endif
 
-/* Function cpAddAdd_BNU */
-#if defined(_USE_KARATSUBA_)
-#if !((_IPP==_IPP_W7) || \
-      (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || \
-      (_IPP==_IPP_P8) || \
-      (_IPP>=_IPP_G9) || \
-      (_IPP==_IPP_S8) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || \
-      (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8))
-BNU_CHUNK_T cpAddAdd_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, const BNU_CHUNK_T* pC, cpSize ns)
-{
-   BNU_CHUNK_T carry1 = 0;
-   BNU_CHUNK_T carry2 = 0;
-   cpSize i;
-   for(i=0; i<ns; i++) {
-      BNU_CHUNK_T s;
-      ADD_ABC(carry1, s, pA[i],pB[i],carry1);
-      ADD_ABC(carry2, pR[i], s,pC[i],carry2);
-   }
-   return (carry1+carry2);
-}
-#endif
-#endif
-
-/* Function cpAddSub_BNU */
-#if defined(_USE_KARATSUBA_)
-#if !((_IPP==_IPP_W7) || \
-      (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || \
-      (_IPP==_IPP_P8) || \
-      (_IPP>=_IPP_G9) || \
-      (_IPP==_IPP_S8) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || \
-      (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8))
-BNU_CHUNK_T cpAddSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK_T* pB, const BNU_CHUNK_T* pC, cpSize ns)
-{
-   BNU_CHUNK_T carry = 0;
-   BNU_CHUNK_T borrow = 0;
-   cpSize i;
-   for(i=0; i<ns; i++) {
-      BNU_CHUNK_T d;
-      SUB_ABC(borrow, d, pB[i], pC[i], borrow);
-      ADD_ABC(carry,  pR[i], d, pA[i], carry);
-   }
-   return (carry-borrow);
-}
-#endif
-#endif
-
-
 /* Function cpAddMulDgt_BNU - multiply-and-add BNU */
 #if defined(_USE_C_cpAddMulDgt_BNU_)
 #pragma message ("C version of cpAddMulDgt_BNU: ON")
@@ -228,6 +227,20 @@ BNU_CHUNK_T cpAddSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK
 #pragma message ("C version of cpAddMulDgt_BNU: OFF")
 #endif
 
+/*F*
+//    Name: cpAddMulDgt_BNU
+//
+// Purpose: multiply-and-add BNU
+//
+// Returns:
+//    extension of result of multiply-and-add BigNum.
+//
+// Parameters:
+//    pA    source BigNum A
+//    pR    resultant BigNum
+//    ns    size of BigNums
+//    val   value to multiply
+*F*/
 #if !((_IPP==_IPP_W7) || \
       (_IPP==_IPP_T7) || \
       (_IPP==_IPP_V8) || \
@@ -240,7 +253,7 @@ BNU_CHUNK_T cpAddSub_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, const BNU_CHUNK
       (_IPP32E>=_IPP32E_E9) || \
       (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpAddMulDgt_BNU_)
-BNU_CHUNK_T cpAddMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
+BNU_CHUNK_T cpAddMulDgt_BNU (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
 {
    BNU_CHUNK_T extension = 0;
    cpSize i;
@@ -263,6 +276,20 @@ BNU_CHUNK_T cpAddMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, B
 #pragma message ("C version of cpSubMulDgt_BNU: OFF")
 #endif
 
+/*F*
+//    Name: cpSubMulDgt_BNU
+//
+// Purpose: multiply-and-sub BNU
+//
+// Returns:
+//    extension of result of multiply-and-sub BigNum.
+//
+// Parameters:
+//    pA    source BigNum A
+//    pR    resultant BigNum
+//    ns    size of BigNums
+//    val   value to multiply
+*F*/
 #if !((_IPP==_IPP_W7) || \
       (_IPP==_IPP_T7) || \
       (_IPP==_IPP_V8) || \
@@ -273,8 +300,7 @@ BNU_CHUNK_T cpAddMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, B
       (_IPP32E==_IPP32E_U8) || \
       (_IPP32E==_IPP32E_Y8) || \
       (_IPP32E>=_IPP32E_E9) || \
-      (_IPP32E==_IPP32E_N8) || \
-      (_IPPLRB >= _IPPLRB_B1)) || \
+      (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpSubMulDgt_BNU_)
 BNU_CHUNK_T cpSubMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, BNU_CHUNK_T val)
 {
@@ -299,6 +325,21 @@ BNU_CHUNK_T cpSubMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, B
 #pragma message ("C version of cpMulAdc_BNU_school: OFF")
 #endif
 
+/*F*
+//    Name: cpMulAdc_BNU_school
+//
+// Purpose: Multiply 2 BigNums.
+//
+// Returns:
+//    extention of result of multiply 2 BigNums
+// Parameters:
+//    pA    source BigNum
+//    pB    source BigNum
+//    nsA   size of A
+//    nsB   size of B
+//    pR    resultant BigNum
+//
+*F*/
 #if !((_IPP==_IPP_V8) || \
       (_IPP==_IPP_P8) || \
       (_IPP>=_IPP_G9) || \
@@ -309,9 +350,7 @@ BNU_CHUNK_T cpSubMulDgt_BNU(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize ns, B
       (_IPP32E>=_IPP32E_E9) || \
       (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpMulAdc_BNU_school_)
-BNU_CHUNK_T cpMulAdc_BNU_school(BNU_CHUNK_T* pR,
-                          const BNU_CHUNK_T* pA, cpSize nsA,
-                          const BNU_CHUNK_T* pB, cpSize nsB)
+BNU_CHUNK_T cpMulAdc_BNU_school (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA, const BNU_CHUNK_T* pB, cpSize nsB)
 {
    const BNU_CHUNK_T* pa = (BNU_CHUNK_T*)pA;
    const BNU_CHUNK_T* pb = (BNU_CHUNK_T*)pB;
@@ -346,6 +385,20 @@ BNU_CHUNK_T cpMulAdc_BNU_school(BNU_CHUNK_T* pR,
 #pragma message ("C version of cpSqrAdc_BNU_school: OFF")
 #endif
 
+/*F*
+//    Name: cpSqrAdc_BNU_school
+//
+// Purpose: Square BigNums.
+//
+// Returns:
+//    extension of result of square BigNum
+//
+// Parameters:
+//    pA    source BigNum
+//    pR    resultant BigNum
+//    nsA   size of A
+//
+*F*/
 #if !((_IPP==_IPP_W7) || \
       (_IPP==_IPP_T7) || \
       (_IPP==_IPP_V8) || \
@@ -358,7 +411,7 @@ BNU_CHUNK_T cpMulAdc_BNU_school(BNU_CHUNK_T* pR,
       (_IPP32E>=_IPP32E_E9) || \
       (_IPP32E==_IPP32E_N8)) || \
       defined(_USE_C_cpSqrAdc_BNU_school_)
-BNU_CHUNK_T cpSqrAdc_BNU_school(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA)
+BNU_CHUNK_T cpSqrAdc_BNU_school (BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize nsA)
 {
    cpSize i;
 
@@ -403,7 +456,21 @@ BNU_CHUNK_T cpSqrAdc_BNU_school(BNU_CHUNK_T* pR, const BNU_CHUNK_T* pA, cpSize n
 #endif
 
 
-BNU_CHUNK_T cpGcd_BNU(BNU_CHUNK_T a, BNU_CHUNK_T b)
+/*F*
+//    Name: cpGcd_BNU
+//
+// Purpose: compute GCD value.
+//
+// Returns:
+//    GCD value
+//
+// Parameters:
+//    a    source BigNum
+//    b    source BigNum
+//
+*F*/
+
+BNU_CHUNK_T cpGcd_BNU (BNU_CHUNK_T a, BNU_CHUNK_T b)
 {
     BNU_CHUNK_T gcd, t, r;
 
@@ -423,6 +490,7 @@ BNU_CHUNK_T cpGcd_BNU(BNU_CHUNK_T a, BNU_CHUNK_T b)
     return gcd;
 }
 
+/*
 /*
 // cpMAC_BNU
 //
@@ -462,10 +530,25 @@ static int cpMac_BNU(BNU_CHUNK_T* pR, cpSize nsR,
    }
 }
 
-int cpModInv_BNU(BNU_CHUNK_T* pInv,
-            const BNU_CHUNK_T* pA, cpSize nsA,
-            const BNU_CHUNK_T* pM, cpSize nsM,
-                  BNU_CHUNK_T* bufInv, BNU_CHUNK_T* bufA, BNU_CHUNK_T* bufM)
+/*F*
+//    Name: cpModInv_BNU
+//
+// Purpose: Multiplicative Inversion BigNum.
+//
+// Returns:                Reason:
+//
+// Parameters:
+//    pA     source (value) BigNum A
+//    nsA    size of A
+//    pM     source (modulus) BigNum M
+//    nsM    size of M
+//    pInv   result BigNum
+//    bufInv buffer of Inv
+//    bufA   buffer of A
+//    bufM   buffer of M
+//
+*F*/
+int cpModInv_BNU (BNU_CHUNK_T* pInv, const BNU_CHUNK_T* pA, cpSize nsA, const BNU_CHUNK_T* pM, cpSize nsM, BNU_CHUNK_T* bufInv, BNU_CHUNK_T* bufA, BNU_CHUNK_T* bufM)
 {
     FIX_BNU(pA, nsA);
     FIX_BNU(pM, nsM);
@@ -492,13 +575,9 @@ int cpModInv_BNU(BNU_CHUNK_T* pInv,
       ZEXPAND_BNU(X2, 0, moduloSize);
       X2[0] = 1;
 
-      //printf("\n");
       for(;;) {
          nsM = cpDiv_BNU(Q, &nsQ, (BNU_CHUNK_T*)pM, nsM, bufA, nsA);
-         //Print_BNU(" q: ", Q, nsQ);
-         //Print_BNU(" m: ", pM, nsM);
          nsX1 = cpMac_BNU(X1,moduloSize, Q,nsQ, X2,nsX2);
-         //Print_BNU("X1: ", X1, nsX1);
 
          if (nsM==1 && pM[0]==1) {
             ////ZEXPAND_BNU(X2, nsX2, moduloSize);
@@ -515,10 +594,7 @@ int cpModInv_BNU(BNU_CHUNK_T* pInv,
          }
 
          nsA = cpDiv_BNU(Q, &nsQ, bufA, nsA, (BNU_CHUNK_T*)pM, nsM);
-         //Print_BNU(" q: ", Q, nsQ);
-         //Print_BNU(" a: ", bufA, nsA);
          nsX2 = cpMac_BNU(X2,moduloSize, Q,nsQ, X1,nsX1);
-         //Print_BNU("X2: ", X2, nsX2);
 
          if(nsA==1 && bufA[0]==1) {
             ////ZEXPAND_BNU(X1, nsX1, moduloSize);
@@ -536,3 +612,4 @@ int cpModInv_BNU(BNU_CHUNK_T* pInv,
       }
    }
 }
+

@@ -92,7 +92,7 @@ typedef int cpSize;
 /* WORD and DWORD manipulators */
 #define IPP_LODWORD(x)    ((Ipp32u)(x))
 #if defined(_SLIMBOOT_OPT)
-  #define IPP_HIDWORD(x)    ((Ipp32u)((RShiftU64(x, 32)) & 0xFFFFFFFF))
+  #define IPP_HIDWORD(x)    ((Ipp32u)((RShiftU64((Ipp64u)(x), 32)) & 0xFFFFFFFF))
 #else
   #define IPP_HIDWORD(x)    ((Ipp32u)(((Ipp64u)(x) >>32) & 0xFFFFFFFF))
 #endif
@@ -100,7 +100,7 @@ typedef int cpSize;
 #define IPP_MAKEHWORD(bLo,bHi) ((Ipp16u)(((Ipp8u)(bLo))  | ((Ipp16u)((Ipp8u)(bHi))) << 8))
 #define IPP_MAKEWORD(hLo,hHi)  ((Ipp32u)(((Ipp16u)(hLo)) | ((Ipp32u)((Ipp16u)(hHi))) << 16))
 #if defined(_SLIMBOOT_OPT)
-  #define IPP_MAKEDWORD(wLo,wHi) ((Ipp64u)(((Ipp32u)(wLo)) | LShiftU64 (wHi, 32)))
+  #define IPP_MAKEDWORD(wLo,wHi) ((Ipp64u)((Ipp32u)(wLo)) | ((Ipp64u)LShiftU64 ((Ipp32u)(wHi), 32)))
 #else
   #define IPP_MAKEDWORD(wLo,wHi) ((Ipp64u)(((Ipp32u)(wLo)) | ((Ipp64u)((Ipp32u)(wHi))) << 32))
 #endif

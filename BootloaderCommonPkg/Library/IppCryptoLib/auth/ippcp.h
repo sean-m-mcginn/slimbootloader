@@ -70,11 +70,7 @@ IPPAPI( const IppLibraryVersion*, ippcpGetLibVersion, (void) )
 */
 
 /* method based generalized (reduced memory footprint) Hash Primitives */
-IPPAPI( const IppsHashMethod*, ippsHashMethod_MD5, (void) )
 IPPAPI( const IppsHashMethod*, ippsHashMethod_SM3, (void) )
-IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA1, (void) )
-IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA1_NI, (void) )
-IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA1_TT, (void) )
 IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA256, (void) )
 IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA256_NI, (void) )
 IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA256_TT, (void) )
@@ -89,20 +85,18 @@ IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA512_256, (void) )
 IPPAPI( const IppsHashMethod*, ippsHashMethod_SHA512_224, (void) )
 
 IPPAPI(IppStatus, ippsHashGetSize_rmf,(int* pSize))
-IPPAPI(IppStatus, ippsHashInit_rmf,(IppsHashState_rmf* pCtx, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, ippsHashInit_rmf,(IppsHashState_rmf* pState, const IppsHashMethod* pMethod))
 
-IPPAPI(IppStatus, ippsHashPack_rmf,(const IppsHashState_rmf* pCtx, Ipp8u* pBuffer, int bufSize))
-IPPAPI(IppStatus, ippsHashUnpack_rmf,(const Ipp8u* pBuffer, IppsHashState_rmf* pCtx))
-IPPAPI(IppStatus, ippsHashDuplicate_rmf,(const IppsHashState_rmf* pSrcCtx, IppsHashState_rmf* pDstCtx))
+IPPAPI(IppStatus, ippsHashPack_rmf,(const IppsHashState_rmf* pState, Ipp8u* pBuffer, int bufSize))
+IPPAPI(IppStatus, ippsHashUnpack_rmf,(const Ipp8u* pBuffer, IppsHashState_rmf* pState))
+IPPAPI(IppStatus, ippsHashDuplicate_rmf,(const IppsHashState_rmf* pSrcState, IppsHashState_rmf* pDstState))
 
-IPPAPI(IppStatus, ippsHashUpdate_rmf,(const Ipp8u* pSrc, int len, IppsHashState_rmf* pCtx))
-IPPAPI(IppStatus, ippsHashGetTag_rmf,(Ipp8u* pMD, int tagLen, const IppsHashState_rmf* pCtx))
-IPPAPI(IppStatus, ippsHashFinal_rmf,(Ipp8u* pMD, IppsHashState_rmf* pCtx))
+IPPAPI(IppStatus, ippsHashUpdate_rmf,(const Ipp8u* pSrc, int len, IppsHashState_rmf* pState))
+IPPAPI(IppStatus, ippsHashGetTag_rmf,(Ipp8u* pMD, int tagLen, const IppsHashState_rmf* pState))
+IPPAPI(IppStatus, ippsHashFinal_rmf,(Ipp8u* pMD, IppsHashState_rmf* pState))
 IPPAPI(IppStatus, ippsHashMessage_rmf,(const Ipp8u* pMsg, int len, Ipp8u* pMD, const IppsHashMethod* pMethod))
 
-
 /* general MGF Primitives*/
-IPPAPI(IppStatus, ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
 IPPAPI(IppStatus, ippsMGF1_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
 IPPAPI(IppStatus, ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
 /*

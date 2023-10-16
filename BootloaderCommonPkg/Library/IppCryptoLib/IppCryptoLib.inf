@@ -23,8 +23,6 @@
 #
 
 [Sources]
-  $(IPP_PATH)/pcpmulbnukara.h
-  $(IPP_PATH)/pcpscramble.h
   $(IPP_PATH)/pcphmac_rmf.h
   $(IPP_PATH)/pcptool.h
   $(IPP_PATH)/ippdefs.h

@@ -1,17 +1,18 @@
 /*******************************************************************************
-* Copyright 2002-2020 Intel Corporation
+* Copyright (C) 2002 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
 /*
@@ -44,6 +45,7 @@ __INLINE void CopyBlock(const void* pSrc, void* pDst, cpSize numBytes)
       d[k] = s[k];
 #endif
 }
+
 __INLINE void CopyBlock8(const void* pSrc, void* pDst)
 {
    int k;
@@ -51,27 +53,9 @@ __INLINE void CopyBlock8(const void* pSrc, void* pDst)
       ((Ipp8u*)pDst)[k] = ((Ipp8u*)pSrc)[k];
 }
 
-#if defined(_NEW_COPY16_)
-__INLINE void CopyBlock16(const void* pSrc, void* pDst)
-{
-#if (_IPP_ARCH ==_IPP_ARCH_EM64T)
-   ((Ipp64u*)pDst)[0] = ((Ipp64u*)pSrc)[0];
-   ((Ipp64u*)pDst)[1] = ((Ipp64u*)pSrc)[1];
-#else
-   ((Ipp32u*)pDst)[0] = ((Ipp32u*)pSrc)[0];
-   ((Ipp32u*)pDst)[1] = ((Ipp32u*)pSrc)[1];
-   ((Ipp32u*)pDst)[2] = ((Ipp32u*)pSrc)[2];
-   ((Ipp32u*)pDst)[3] = ((Ipp32u*)pSrc)[3];
-#endif
-}
-#else
-__INLINE void CopyBlock16(const void* pSrc, void* pDst)
-{
-   int k;
-   for(k=0; k<16; k++ )
-      ((Ipp8u*)pDst)[k] = ((Ipp8u*)pSrc)[k];
-}
-#endif
+/* Because of the incorrect inlining with ICX compiler definition of CopyBlock16 function was moved to pcptool.c */ 
+#define CopyBlock16 OWNAPI(CopyBlock16)
+void CopyBlock16 (const void* pSrc, void* pDst);
 
 __INLINE void CopyBlock24(const void* pSrc, void* pDst)
 {
@@ -113,7 +97,7 @@ __INLINE void PurgeBlock(void* pDst, int len)
 }
 #else
 #define PurgeBlock OWNAPI(PurgeBlock)
-void PurgeBlock(void* pDst, int len);
+    void PurgeBlock (void* pDst, int len);
 #endif
 
 /* fill block */
@@ -134,6 +118,21 @@ __INLINE void XorBlock(const void* pSrc1, const void* pSrc2, void* pDst, int len
    for(k=0; k<len; k++)
       d[k] = (Ipp8u)(p1[k] ^p2[k]);
 }
+/* Performs operation:
+ *      reverse(pSrc1 `xor_len_bytes` reverse(pSrc2))
+ * and stores the result in |pDst|.
+ *  |len| specifies how many bytes of |pSrc1| shall be xor-ed to |pSrc2|. It must not
+ *  be more than |blockSize|, and this condition should be ensured outside.
+ */
+__INLINE void XorBlockMirror(const void* pSrc1, const void* pSrc2, void* pDst, int blockSize, int len)
+{
+   const Ipp8u* p1 = (const Ipp8u*)pSrc1;
+   const Ipp8u* p2 = (const Ipp8u*)pSrc2;
+   Ipp8u* d  = (Ipp8u*)pDst;
+   int k;
+   for(k=0; k<len; k++)
+      d[blockSize-k-1] = (Ipp8u)(p1[k] ^ p2[blockSize-k-1]);
+}
 __INLINE void XorBlock8(const void* pSrc1, const void* pSrc2, void* pDst)
 {
    const Ipp8u* p1 = (const Ipp8u*)pSrc1;
@@ -144,30 +143,9 @@ __INLINE void XorBlock8(const void* pSrc1, const void* pSrc2, void* pDst)
       d[k] = (Ipp8u)(p1[k] ^p2[k]);
 }
 
-#if defined(_NEW_XOR16_)
-__INLINE void XorBlock16(const void* pSrc1, const void* pSrc2, void* pDst)
-{
-#if (_IPP_ARCH ==_IPP_ARCH_EM64T)
-   ((Ipp64u*)pDst)[0] = ((Ipp64u*)pSrc1)[0] ^ ((Ipp64u*)pSrc2)[0];
-   ((Ipp64u*)pDst)[1] = ((Ipp64u*)pSrc1)[1] ^ ((Ipp64u*)pSrc2)[1];
-#else
-   ((Ipp32u*)pDst)[0] = ((Ipp32u*)pSrc1)[0] ^ ((Ipp32u*)pSrc2)[0];
-   ((Ipp32u*)pDst)[1] = ((Ipp32u*)pSrc1)[1] ^ ((Ipp32u*)pSrc2)[1];
-   ((Ipp32u*)pDst)[2] = ((Ipp32u*)pSrc1)[2] ^ ((Ipp32u*)pSrc2)[2];
-   ((Ipp32u*)pDst)[3] = ((Ipp32u*)pSrc1)[3] ^ ((Ipp32u*)pSrc2)[3];
-#endif
-}
-#else
-__INLINE void XorBlock16(const void* pSrc1, const void* pSrc2, void* pDst)
-{
-   const Ipp8u* p1 = (const Ipp8u*)pSrc1;
-   const Ipp8u* p2 = (const Ipp8u*)pSrc2;
-   Ipp8u* d  = (Ipp8u*)pDst;
-   int k;
-   for(k=0; k<16; k++ )
-      d[k] = (Ipp8u)(p1[k] ^p2[k]);
-}
-#endif
+// Because of the incorrect inlining definition of XorBlock16 function was moved to pcptool.c
+#define XorBlock16 OWNAPI(XorBlock16)
+    void XorBlock16 (const void* pSrc1, const void* pSrc2, void* pDst);
 
 __INLINE void XorBlock24(const void* pSrc1, const void* pSrc2, void* pDst)
 {
