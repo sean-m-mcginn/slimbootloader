@@ -1,30 +1,28 @@
 /*******************************************************************************
-* Copyright 2005-2020 Intel Corporation
+* Copyright (C) 2005 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
-
-/*
-//               Intel(R) Integrated Performance Primitives
-//                   Cryptographic Primitives (ippcp)
+/* 
 //
-//   Intel(R) Integrated Performance Primitives Cryptography (Intel(R) IPP Cryptography)
-//
+//   Intel® Integrated Performance Primitives Cryptography (Intel® IPP Cryptography)
+// 
 //   Purpose:
 //     Define ippCP variant
-//
-//
+// 
+// 
 */
 
 #if !defined(_CP_VARIANT_H)
@@ -62,21 +60,41 @@
       #define _ALG_AES_SAFE_   _ALG_AES_SAFE_COMPOSITE_GF_
    #else
       #define _ALG_AES_SAFE_   _ALG_AES_SAFE_COMPACT_SBOX_
+      //#define _ALG_AES_SAFE_   _ALG_AES_SAFE_COMPOSITE_GF_
    #endif
 #endif
 
-
 /*
-// set/reset _SHA_NI_ENABLING_
+// AES Noise
+// Enable mitigation when dispatching available to
+// Intel® Advanced Encryption Standard New Instructions (Intel® AES-NI) - _AES_NI_ENABLING_ != _FEATURE_OFF_
+// or vector extensions of Intel® AES-NI - _IPP32E >=_IPP32E_K1
 */
-#if (_IPP>=_IPP_P8) || (_IPP32E>=_IPP32E_Y8)
-   #if !defined(_SHA_NI_ENABLING_)
-      #define _SHA_NI_ENABLING_  _FEATURE_TICKTOCK_
+#ifndef IPP_AES_PROB_NOISE
+#define IPP_AES_PROB_NOISE _FEATURE_ON_
+#endif
+
+#if (IPP_AES_PROB_NOISE == _FEATURE_ON_)
+   #if ((_AES_NI_ENABLING_ != _FEATURE_OFF_) || (_IPP32E >=_IPP32E_K1))
+       #define _AES_PROB_NOISE _FEATURE_ON_
+   #else
+       #define _AES_PROB_NOISE _FEATURE_OFF_
    #endif
 #else
-   #undef  _SHA_NI_ENABLING_
+   #define _AES_PROB_NOISE _FEATURE_OFF_
+#endif
+
+/*
+// if there is no outside assignment
+// set _SHA_NI_ENABLING_ based on CPU specification
+*/
+#if !defined(_SHA_NI_ENABLING_)
+#if (_IPP>=_IPP_P8) || (_IPP32E>=_IPP32E_Y8)
+   #define _SHA_NI_ENABLING_  _FEATURE_TICKTOCK_
+#else
    #define _SHA_NI_ENABLING_  _FEATURE_OFF_
-#endif //lavin test
+#endif
+#endif
 
 /*
 // set/reset _ADCOX_NI_ENABLING_
@@ -161,7 +179,7 @@
 #endif
 
 /*
-// SHA1 plays especial role in Intel IPP Cryptography.
+// SHA1 plays especial role in Intel IPP Cryptography. 
 // Thus Intel IPP Cryptography random generator and
 // therefore prime number generator are based on SHA1.
 // So, do no exclude SHA1 from the active list of hash algorithms
@@ -210,41 +228,24 @@
 //    - do/don't use Karatsuba multiplication alg
 */
 #define _USE_SQR_          /*     use implementaton of sqr */
-#define xUSE_KARATSUBA_    /* not use Karatsuba method for multiplication */
 #if !defined(_DISABLE_WINDOW_EXP_)
    #define _USE_WINDOW_EXP_   /*     use fixed window exponentiation */
 #endif
 
+
 /*
 // RSA:
-//    - do/don't use Ernie's style mitigation of CBA
-//    - do/don't use Gres's  style mitigation of CBA
-//    - do/don't use Foldinf technique for RSA-1204 implementation
+//    - do/don't use version 1 style mitigation of CBA
+//    - do/don't use own style mitigation of CBA
+//    - do/don't use Folding technique for RSA-1204 implementation
 */
-#define xUSE_ERNIE_CBA_MITIGATION_  /* not use (Ernie) mitigation of CBA */
-#define _USE_GRES_CBA_MITIGATION_   /*     use (Gres)  mitigation of CBA */
-#define xUSE_FOLD_MONT512_          /*     use foding technique in RSA-1024 case */
+#define xUSE_VERSION1_CBA_MITIGATION_   /* not use (version 1)  mitigation of CBA */
+#define _USE_IPP_OWN_CBA_MITIGATION_    /*     use (own) mitigation of CBA */
+#define xUSE_FOLD_MONT512_              /*     use folding technique in RSA-1024 case */
 
-#if (_IPP>=_IPP_W7)
-#define _RSA_SSE2
-#define _RSA_SSE2_PUBLIC_BIN_
-#define _xRSA_SSE2_PUBLIC_WIN_
-#endif
-
-#if (_IPP32E>=_IPP32E_L9)
-#define _RSA_AVX2
-#define _xRSA_AVX2_PUBLIC_BIN_
-#define _xRSA_AVX2_PUBLIC_WIN_
-#endif
-
-#if (_IPP32E>=_IPP32E_K0)
-#define _RSA_AVX512
-#define _RSA_AVX512_PUBLIC_BIN_
-#define _xRSA_AVX512_PUBLIC_WIN_
-#endif
 
 /*
-// IPP supports different implementation of NIST's (standard) EC over GF(0):
+// Intel IPP Cryptography supports different implementation of NIST's (standard) EC over GF(0):
 //    P-128 (IppECCPStd128r1, IppECCPStd128r2)
 //    P-192 (IppECCPStd192r1)
 //    P-224 (IppECCPStd224r1)
@@ -408,55 +409,11 @@
 #  define _ECP_GENERAL_ _ECP_IMPL_NONE_
 #endif
 
-//#define _ECP_128_    _ECP_IMPL_SPECIFIC_
-//#define _ECP_192_    _ECP_IMPL_SPECIFIC_
-//#define _ECP_224_    _ECP_IMPL_SPECIFIC_
-//#define _ECP_256_    _ECP_IMPL_SPECIFIC_
-//#define _ECP_384_    _ECP_IMPL_SPECIFIC_
-//#define _ECP_521_    _ECP_IMPL_SPECIFIC_
-//#define _ECP_SM2_    _ECP_IMPL_SPECIFIC_
-
-//#if (_IPP32E >= _IPP32E_M7)
-//#undef  _ECP_192_
-//#undef  _ECP_224_
-//#undef  _ECP_256_
-//#undef  _ECP_384_
-//#undef  _ECP_521_
-//#undef  _ECP_SM2_
-
-//#define _ECP_192_    _ECP_IMPL_MFM_
-//#define _ECP_224_    _ECP_IMPL_MFM_
-//#define _ECP_256_    _ECP_IMPL_MFM_
-//#define _ECP_384_    _ECP_IMPL_MFM_
-//#define _ECP_521_    _ECP_IMPL_MFM_
-//#define _ECP_SM2_    _ECP_IMPL_MFM_
-//#endif
-
 
 /*
 // EC over GF(p):
 //    - do/don't use mitigation of CBA
 */
 #define _USE_ECCP_SSCM_             /*     use SSCM ECCP */
-
-
-#if defined ( _OPENMP )
-#define DEFAULT_CPU_NUM    (8)
-
-#define     BF_MIN_BLK_PER_THREAD (32)
-#define     TF_MIN_BLK_PER_THREAD (16)
-
-#define    DES_MIN_BLK_PER_THREAD (32)
-#define   TDES_MIN_BLK_PER_THREAD (16)
-
-#define  RC5_64_MIN_BLK_PER_THREAD (16)
-#define RC5_128_MIN_BLK_PER_THREAD (32)
-
-#define RIJ128_MIN_BLK_PER_THREAD (32)
-#define RIJ192_MIN_BLK_PER_THREAD (16)
-#define RIJ256_MIN_BLK_PER_THREAD (16)
-
-#define AESNI128_MIN_BLK_PER_THREAD (256)
-#endif
 
 #endif /* _CP_VARIANT_H */

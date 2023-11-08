@@ -22,15 +22,7 @@
 //     Digesting message according to SHA256
 // 
 //  Contents:
-//     ippsSHA256GetSize()
-//     ippsSHA256Init()
-//     ippsSHA256Pack()
-//     ippsSHA256Unpack()
-//     ippsSHA256Duplicate()
-//     ippsSHA256Update()
-//     ippsSHA256GetTag()
-//     ippsSHA256Final()
-//     ippsSHA256MessageDigest()
+//     cpFinalizeSHA256()
 // 
 // 
 */
@@ -39,341 +31,39 @@
 #include "owncp.h"
 #include "pcphash.h"
 #include "pcphash_rmf.h"
+#include "pcptool.h"
+#include "pcpsha256stuff.h"
 
-#if !defined(_PCP_SHA256_STUFF_H)
-#define _PCP_SHA256_STUFF_H
-
-/* SHA-256, SHA-224 constants */
-static const Ipp32u sha256_iv[] = {
-   0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-   0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19};
-static const Ipp32u sha224_iv[] = {
-   0xC1059ED8, 0x367CD507, 0x3070DD17, 0xF70E5939,
-   0xFFC00B31, 0x68581511, 0x64F98FA7, 0xBEFA4FA4};
-
-static __ALIGN16 const Ipp32u sha256_cnt[] = {
-   0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
-   0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
-   0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
-   0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
-   0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
-   0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
-   0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
-   0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
-   0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
-   0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
-   0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
-   0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
-   0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
-   0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
-   0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
-   0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
-};
-
-
-/* setup init hash value */
-__INLINE void hashInit(Ipp32u* pHash, const Ipp32u* iv)
+IPP_OWN_DEFN (void, cpFinalizeSHA256, (DigestSHA256 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u processedMsgLen))
 {
-   pHash[0] = iv[0];
-   pHash[1] = iv[1];
-   pHash[2] = iv[2];
-   pHash[3] = iv[3];
-   pHash[4] = iv[4];
-   pHash[5] = iv[5];
-   pHash[6] = iv[6];
-   pHash[7] = iv[7];
-}
-static void sha256_hashInit (void* pHash)
-{
-   hashInit((Ipp32u*)pHash, sha256_iv);
-}
-static void sha224_hashInit (void* pHash)
-{
-   hashInit((Ipp32u*)pHash, sha224_iv);
-}
+   /* select processing  function */
+   #if (_SHA_NI_ENABLING_==_FEATURE_ON_)
+   cpHashProc updateFunc = UpdateSHA256ni;
+   #elif (_SHA_NI_ENABLING_==_FEATURE_TICKTOCK_)
+   cpHashProc updateFunc = IsFeatureEnabled(ippCPUID_SHA)? UpdateSHA256ni : UpdateSHA256;
+   #else
+   cpHashProc updateFunc = UpdateSHA256;
+   #endif
 
-static void sha256_hashUpdate (void* pHash, const Ipp8u* pMsg, int msgLen)
-{
-   UpdateSHA256(pHash, pMsg, msgLen, sha256_cnt);
-}
-#if (_SHA_NI_ENABLING_==_FEATURE_TICKTOCK_ || _SHA_NI_ENABLING_==_FEATURE_ON_)
-static void sha256_ni_hashUpdate (void* pHash, const Ipp8u* pMsg, int msgLen)
-{
-   UpdateSHA256ni(pHash, pMsg, msgLen, sha256_cnt);
-}
-#endif
+   /* local buffer and it length */
+   Ipp8u buffer[MBS_SHA256*2];
+   int bufferLen = inpLen < (MBS_SHA256-(int)MLR_SHA256)? MBS_SHA256 : MBS_SHA256*2; 
 
-/* convert hash into big endian */
-static void sha256_hashOctString (Ipp8u* pMD, void* pHashVal)
-{
-   /* convert hash into big endian */
-   ((Ipp32u*)pMD)[0] = ENDIANNESS32(((Ipp32u*)pHashVal)[0]);
-   ((Ipp32u*)pMD)[1] = ENDIANNESS32(((Ipp32u*)pHashVal)[1]);
-   ((Ipp32u*)pMD)[2] = ENDIANNESS32(((Ipp32u*)pHashVal)[2]);
-   ((Ipp32u*)pMD)[3] = ENDIANNESS32(((Ipp32u*)pHashVal)[3]);
-   ((Ipp32u*)pMD)[4] = ENDIANNESS32(((Ipp32u*)pHashVal)[4]);
-   ((Ipp32u*)pMD)[5] = ENDIANNESS32(((Ipp32u*)pHashVal)[5]);
-   ((Ipp32u*)pMD)[6] = ENDIANNESS32(((Ipp32u*)pHashVal)[6]);
-   ((Ipp32u*)pMD)[7] = ENDIANNESS32(((Ipp32u*)pHashVal)[7]);
-}
-static void sha224_hashOctString (Ipp8u* pMD, void* pHashVal)
-{
-   /* convert hash into big endian */
-   ((Ipp32u*)pMD)[0] = ENDIANNESS32(((Ipp32u*)pHashVal)[0]);
-   ((Ipp32u*)pMD)[1] = ENDIANNESS32(((Ipp32u*)pHashVal)[1]);
-   ((Ipp32u*)pMD)[2] = ENDIANNESS32(((Ipp32u*)pHashVal)[2]);
-   ((Ipp32u*)pMD)[3] = ENDIANNESS32(((Ipp32u*)pHashVal)[3]);
-   ((Ipp32u*)pMD)[4] = ENDIANNESS32(((Ipp32u*)pHashVal)[4]);
-   ((Ipp32u*)pMD)[5] = ENDIANNESS32(((Ipp32u*)pHashVal)[5]);
-   ((Ipp32u*)pMD)[6] = ENDIANNESS32(((Ipp32u*)pHashVal)[6]);
-}
+   /* copy rest of message into internal buffer */
+   CopyBlock(inpBuffer, buffer, inpLen);
 
-static void sha256_msgRep (Ipp8u* pDst, Ipp64u lenLo, Ipp64u lenHi)
-{
-   IPP_UNREFERENCED_PARAMETER(lenHi);
-   lenLo = ENDIANNESS64(lenLo<<3);
-   ((Ipp64u*)(pDst))[0] = lenLo;
-}
+   /* padd message */
+   buffer[inpLen++] = 0x80;
+   PadBlock(0, buffer+inpLen, (cpSize)(bufferLen-inpLen-(int)MLR_SHA256));
 
-/*
-// SHA256 init context
-*/
-static IppStatus GetSizeSHA256 (int* pSize)
-{
-   IPP_BAD_PTR1_RET(pSize);
-   *pSize = sizeof(IppsSHA256State);
-   return ippStsNoErr;
-}
-
-static IppStatus InitSHA256 (IppsSHA256State* pState, const DigestSHA256 IV)
-{
-   /* test state pointer */
-   IPP_BAD_PTR1_RET(pState);
-
-   HASH_SET_ID(pState, idCtxSHA256);
-   HASH_LENLO(pState) = 0;
-   HASH_BUFFIDX(pState) = 0;
-
-   /* setup initial digest */
-   HASH_VALUE(pState)[0] = IV[0];
-   HASH_VALUE(pState)[1] = IV[1];
-   HASH_VALUE(pState)[2] = IV[2];
-   HASH_VALUE(pState)[3] = IV[3];
-   HASH_VALUE(pState)[4] = IV[4];
-   HASH_VALUE(pState)[5] = IV[5];
-   HASH_VALUE(pState)[6] = IV[6];
-   HASH_VALUE(pState)[7] = IV[7];
-
-   return ippStsNoErr;
-}
-
-#define cpSHA256MessageDigest OWNAPI(cpSHA256MessageDigest)
-   IppStatus cpSHA256MessageDigest (DigestSHA256 hash, const Ipp8u* pMsg, int msgLen, const DigestSHA256 IV);
-#define cpFinalizeSHA256 OWNAPI(cpFinalizeSHA256)
-   void cpFinalizeSHA256 (DigestSHA256 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u processedMsgLen);
-
-/*F*
-//    Name: ippsHashMethod_SHA256
-//
-// Purpose: Return SHA256 method.
-//
-// Returns:
-//          Pointer to SHA256 hash-method.
-//
-*F*/
-IPPFUN( const IppsHashMethod*, ippsHashMethod_SHA256, (void) )
-{
-   static IppsHashMethod method = {
-      ippHashAlg_SHA256,
-      IPP_SHA256_DIGEST_BITSIZE/8,
-      MBS_SHA256,
-      MLR_SHA256,
-      0,
-      0,
-      0,
-      0
-   };
-
-   method.hashInit   = sha256_hashInit;
-   method.hashUpdate = sha256_hashUpdate;
-   method.hashOctStr = sha256_hashOctString;
-   method.msgLenRep  = sha256_msgRep;
-
-   return &method;
-}
-
-#if defined(_ENABLE_ALG_SHA256_) || defined(_ENABLE_ALG_SHA224_)
-
-#if !((_IPP==_IPP_M5) || \
-      (_IPP==_IPP_W7) || (_IPP==_IPP_T7) || \
-      (_IPP==_IPP_V8) || (_IPP==_IPP_P8) || \
-      (_IPP==_IPP_S8) || (_IPP>=_IPP_G9) || \
-      (_IPP32E==_IPP32E_M7) || \
-      (_IPP32E==_IPP32E_U8) || (_IPP32E==_IPP32E_Y8) || \
-      (_IPP32E==_IPP32E_N8) || (_IPP32E>=_IPP32E_E9))
-
-/*
-// SHA256 Specific Macros (reference proposal 256-384-512)
-*/
-#define CH(x,y,z)    (((x) & (y)) ^ (~(x) & (z)))
-#define MAJ(x,y,z)   (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
-
-#define SUM0(x)   (ROR32((x), 2) ^ ROR32((x),13) ^ ROR32((x),22))
-#define SUM1(x)   (ROR32((x), 6) ^ ROR32((x),11) ^ ROR32((x),25))
-
-#define SIG0(x)   (ROR32((x), 7) ^ ROR32((x),18) ^ LSR32((x), 3))
-#define SIG1(x)   (ROR32((x),17) ^ ROR32((x),19) ^ LSR32((x),10))
-
-#define SHA256_UPDATE(i) \
-   wdat[i & 15] += SIG1(wdat[(i+14)&15]) + wdat[(i+9)&15] + SIG0(wdat[(i+1)&15])
-
-#define SHA256_STEP(i,j)  \
-   v[(7 - i) & 7] += (j ? SHA256_UPDATE(i) : wdat[i&15])    \
-                  + SHA256_cnt_loc[i + j]                       \
-                  + SUM1(v[(4-i)&7])                        \
-                  + CH(v[(4-i)&7], v[(5-i)&7], v[(6-i)&7]); \
-   v[(3-i)&7] += v[(7-i)&7];                                \
-   v[(7-i)&7] += SUM0(v[(0-i)&7]) + MAJ(v[(0-i)&7], v[(1-i)&7], v[(2-i)&7])
-
-#define COMPACT_SHA256_STEP(A,B,C,D,E,F,G,H, W,K, r) { \
-   Ipp32u _T1 = (H) + SUM1((E)) + CH((E),(F),(G)) + (W)[(r)] + (K)[(r)]; \
-   Ipp32u _T2 = SUM0((A)) + MAJ((A),(B),(C)); \
-   (H) = (G); \
-   (G) = (F); \
-   (F) = (E); \
-   (E) = (D)+_T1; \
-   (D) = (C); \
-   (C) = (B); \
-   (B) = (A); \
-   (A) = _T1+_T2; \
-}
-
-/*F*
-//    Name: UpdateSHA256
-//
-// Purpose: Update internal hash according to input message stream.
-//
-// Parameters:
-//    uniHash  pointer to in/out hash
-//    mblk     pointer to message stream
-//    mlen     message stream length (multiple by message block size)
-//    uniParam pointer to the optional parameter
-//
-*F*/
-#if defined(_ALG_SHA256_COMPACT_)
-
-void UpdateSHA256 (void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
-{
-   Ipp32u* data = (Ipp32u*)mblk;
-
-   Ipp32u* digest = (Ipp32u*)uniHash;
-   Ipp32u* SHA256_cnt_loc = (Ipp32u*)uniParam;
-
-   for(; mlen>=MBS_SHA256; data += MBS_SHA256/sizeof(Ipp32u), mlen -= MBS_SHA256) {
-      int t;
-
-      /*
-      // expand message block
-      */
-      Ipp32u W[64];
-      /* initialize the first 16 words in the array W (remember about endian) */
-      for(t=0; t<16; t++) {
-         #if (IPP_ENDIAN == IPP_BIG_ENDIAN)
-         W[t] = data[t];
-         #else
-         W[t] = ENDIANNESS( data[t] );
-         #endif
-      }
-      for(; t<64; t++)
-         W[t] = SIG1(W[t-2]) + W[t-7] + SIG0(W[t-15]) + W[t-16];
-
-      /*
-      // update hash
-      */
-      {
-         /* init A, B, C, D, E, F, G, H by the input hash */
-         Ipp32u A = digest[0];
-         Ipp32u B = digest[1];
-         Ipp32u C = digest[2];
-         Ipp32u D = digest[3];
-         Ipp32u E = digest[4];
-         Ipp32u F = digest[5];
-         Ipp32u G = digest[6];
-         Ipp32u H = digest[7];
-
-         for(t=0; t<64; t++)
-         COMPACT_SHA256_STEP(A,B,C,D,E,F,G,H, W,SHA256_cnt_loc, t);
-
-         /* update hash*/
-         digest[0] += A;
-         digest[1] += B;
-         digest[2] += C;
-         digest[3] += D;
-         digest[4] += E;
-         digest[5] += F;
-         digest[6] += G;
-         digest[7] += H;
-      }
-   }
-}
-
+   /* put processed message length in bits */
+#ifdef _SLIMBOOT_OPT
+   processedMsgLen = ENDIANNESS64(LShiftU64 (processedMsgLen, 3));
 #else
-void UpdateSHA256 (void* uniHash, const Ipp8u* mblk, int mlen, const void* uniParam)
-{
-   Ipp32u* data = (Ipp32u*)mblk;
+   processedMsgLen = ENDIANNESS64(processedMsgLen<<3);
+#endif
+   ((Ipp64u*)(buffer+bufferLen))[-1] = processedMsgLen;
 
-   Ipp32u* digest = (Ipp32u*)uniHash;
-   Ipp32u* SHA256_cnt_loc = (Ipp32u*)uniParam;
-
-   for(; mlen>=MBS_SHA256; data += MBS_SHA256/sizeof(Ipp32u), mlen -= MBS_SHA256) {
-      Ipp32u wdat[16];
-      int j;
-
-      /* copy digest */
-      Ipp32u v[8];
-      CopyBlock(digest, v, IPP_SHA256_DIGEST_BITSIZE/BYTESIZE);
-
-      /* initialize the first 16 words in the array W (remember about endian) */
-      for(j=0; j<16; j++) {
-         #if (IPP_ENDIAN == IPP_BIG_ENDIAN)
-         wdat[j] = data[j];
-         #else
-         wdat[j] = ENDIANNESS( data[j] );
-         #endif
-      }
-
-      for(j=0; j<64; j+=16) {
-         SHA256_STEP( 0, j);
-         SHA256_STEP( 1, j);
-         SHA256_STEP( 2, j);
-         SHA256_STEP( 3, j);
-         SHA256_STEP( 4, j);
-         SHA256_STEP( 5, j);
-         SHA256_STEP( 6, j);
-         SHA256_STEP( 7, j);
-         SHA256_STEP( 8, j);
-         SHA256_STEP( 9, j);
-         SHA256_STEP(10, j);
-         SHA256_STEP(11, j);
-         SHA256_STEP(12, j);
-         SHA256_STEP(13, j);
-         SHA256_STEP(14, j);
-         SHA256_STEP(15, j);
-      }
-
-      /* update digest */
-      digest[0] += v[0];
-      digest[1] += v[1];
-      digest[2] += v[2];
-      digest[3] += v[3];
-      digest[4] += v[4];
-      digest[5] += v[5];
-      digest[6] += v[6];
-      digest[7] += v[7];
-   }
+   /* copmplete hash computation */
+   updateFunc(pHash, buffer, bufferLen, sha256_cnt);
 }
-#endif
-#endif
-#endif
-
-#endif /* #if !defined(_PCP_SHA256_STUFF_H) */

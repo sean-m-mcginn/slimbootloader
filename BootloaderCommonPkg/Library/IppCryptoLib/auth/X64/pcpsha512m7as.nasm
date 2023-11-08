@@ -22,7 +22,7 @@
 ;     Content:
 ;        UpdateSHA512
 ;
-;
+; Changes in this file!
 
 %include "ia_32e.inc"
 

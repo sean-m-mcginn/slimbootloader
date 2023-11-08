@@ -43,6 +43,6 @@ struct _cpHashCtx_rmf {
 #define HASH_METHOD(stt)   ((stt)->pMethod)
 
 #define cpFinalize_rmf OWNAPI(cpFinalize_rmf)
-   void cpFinalize_rmf (DigestSHA512 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u lenLo, Ipp64u lenHi, const IppsHashMethod* method);
+   IPP_OWN_DECL (void, cpFinalize_rmf, (DigestSHA512 pHash, const Ipp8u* inpBuffer, int inpLen, Ipp64u lenLo, Ipp64u lenHi, const IppsHashMethod* method))
 
 #endif /* _CP_HASH_RMF_H */

@@ -124,7 +124,7 @@ typedef struct _cpHashAttr {
 typedef Ipp64u cpHash[IPP_SHA512_DIGEST_BITSIZE/BITSIZE(Ipp64u)]; /* hash value */
 
 /* hash update function */
-typedef void (*cpHashProc) (void* pHash, const Ipp8u* pMsg, int msgLen, const void* pParam);
+IPP_OWN_FUNPTR (void, cpHashProc, (void* pHash, const Ipp8u* pMsg, int msgLen, const void* pParam))
 
 /* generalized hash context */
 struct _cpHashCtx {
@@ -205,31 +205,46 @@ __INLINE IppHashAlgId cpValidHashAlg(IppHashAlgId algID)
 
 /* common functions */
 #define cpComputeDigest OWNAPI(cpComputeDigest)
-   void cpComputeDigest (Ipp8u* pHashTag, int hashTagLen, const IppsHashState* pCtx);
+   IPP_OWN_DECL (void, cpComputeDigest, (Ipp8u* pHashTag, int hashTagLen, const IppsHashState* pCtx))
 
 /* processing functions */
 #define UpdateSHA1   OWNAPI(UpdateSHA1)
-   void UpdateSHA1 (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam);
+   IPP_OWN_DECL (void, UpdateSHA1, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
 #define UpdateSHA256 OWNAPI(UpdateSHA256)
-   void UpdateSHA256 (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam);
+   IPP_OWN_DECL (void, UpdateSHA256, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
 #define UpdateSHA512 OWNAPI(UpdateSHA512)
-   void UpdateSHA512 (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam);
+   IPP_OWN_DECL (void, UpdateSHA512, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
 #define UpdateMD5    OWNAPI(UpdateMD5)
-   void UpdateMD5 (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam);
+   IPP_OWN_DECL (void, UpdateMD5, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
 #define UpdateSM3    OWNAPI(UpdateSM3)
-   void UpdateSM3 (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam);
+   IPP_OWN_DECL (void, UpdateSM3, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
 
 #if (_SHA_NI_ENABLING_ == _FEATURE_TICKTOCK_) || (_SHA_NI_ENABLING_ == _FEATURE_ON_)
 #define UpdateSHA1ni   OWNAPI(UpdateSHA1ni)
-   void UpdateSHA1ni (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam);
+   IPP_OWN_DECL (void, UpdateSHA1ni, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
 #define UpdateSHA256ni OWNAPI(UpdateSHA256ni)
-   void UpdateSHA256ni (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam);
+   IPP_OWN_DECL (void, UpdateSHA256ni, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
+#endif
+
+#ifdef _SLIMBOOT_OPT
+#define UpdateSHA256V8 OWNAPI(UpdateSHA256V8)
+   IPP_OWN_DECL (void EFIAPI, UpdateSHA256V8, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
+#define UpdateSHA256Ni OWNAPI(UpdateSHA256Ni)
+   IPP_OWN_DECL (void EFIAPI, UpdateSHA256Ni, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
+#define SBLUpdateSHA256 OWNAPI(SBLUpdateSHA256)
+   IPP_OWN_DECL (void, SBLUpdateSHA256, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
+#define UpdateSHA512G9 OWNAPI(UpdateSHA512G9)
+   IPP_OWN_DECL (void EFIAPI, UpdateSHA512G9, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
+#define UpdateSHA512W7 OWNAPI(UpdateSHA512W7)
+   IPP_OWN_DECL (void EFIAPI, UpdateSHA512W7, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
+#define SBLUpdateSHA512 OWNAPI(SBLUpdateSHA512)
+   IPP_OWN_DECL (void, SBLUpdateSHA512, (void* pHash, const Ipp8u* mblk, int mlen, const void* pParam))
 #endif
 
 /* general methods */
 #define cpInitHash OWNAPI(cpInitHash)
-   int cpInitHash (IppsHashState* pCtx, IppHashAlgId algID);
+   IPP_OWN_DECL (int, cpInitHash, (IppsHashState* pCtx, IppHashAlgId algID))
 #define cpReInitHash OWNAPI(cpReInitHash)
-   int cpReInitHash (IppsHashState* pCtx, IppHashAlgId algID);
+   IPP_OWN_DECL (int, cpReInitHash, (IppsHashState* pCtx, IppHashAlgId algID))
 
 #endif /* _PCP_HASH_H */

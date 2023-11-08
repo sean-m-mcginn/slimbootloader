@@ -1,25 +1,26 @@
 /*******************************************************************************
-* Copyright 2002-2020 Intel Corporation
+* Copyright (C) 2002 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
-/*
+/* 
 //               Intel(R) Integrated Performance Primitives
 //                   Cryptographic Primitives (ippcp)
-//
-//
-//
+// 
+// 
+// 
 */
 
 #if !defined(_CP_BN_H)
@@ -44,7 +45,6 @@ struct _cpBigNum
    BNU_CHUNK_T*  buffer;   /* temporary buffer              */
 };
 
-
 /* BN accessory macros */
 #define BN_SET_ID(pBN)     ((pBN)->idCtx = (Ipp32u)idCtxBigNum ^ (Ipp32u)IPP_UINT_PTR(pBN))
 #define BN_SIGN(pBN)       ((pBN)->sgn)
@@ -66,9 +66,9 @@ struct _cpBigNum
 
 /* pack-unpack context */
 #define cpPackBigNumCtx OWNAPI(cpPackBigNumCtx)
-   void cpPackBigNumCtx(const IppsBigNumState* pBN, Ipp8u* pBuffer);
+   IPP_OWN_DECL (void, cpPackBigNumCtx, (const IppsBigNumState* pBN, Ipp8u* pBuffer))
 #define cpUnpackBigNumCtx OWNAPI(cpUnpackBigNumCtx)
-   void cpUnpackBigNumCtx(const Ipp8u* pBuffer, IppsBigNumState* pBN);
+   IPP_OWN_DECL (void, cpUnpackBigNumCtx, (const Ipp8u* pBuffer, IppsBigNumState* pBN))
 
 /* copy BN */
 __INLINE IppsBigNumState* cpBN_copy(IppsBigNumState* pDst, const IppsBigNumState* pSrc)
@@ -193,12 +193,12 @@ typedef struct _ippcpBigNumChunk {
 } IppsBigNumStateChunk;
 
 /* reference to BN(1) and BN(2) */
-#define          cpBN_OneRef OWNAPI(cpBN_OneRef)
-IppsBigNumState* cpBN_OneRef(void);
-#define          cpBN_TwoRef OWNAPI(cpBN_TwoRef)
-IppsBigNumState* cpBN_TwoRef(void);
-#define          cpBN_ThreeRef OWNAPI(cpBN_ThreeRef)
-IppsBigNumState* cpBN_ThreeRef(void);
+#define cpBN_OneRef OWNAPI(cpBN_OneRef)
+   IPP_OWN_DECL (IppsBigNumState*, cpBN_OneRef, (void))
+#define cpBN_TwoRef OWNAPI(cpBN_TwoRef)
+   IPP_OWN_DECL (IppsBigNumState*, cpBN_TwoRef, (void))
+#define cpBN_ThreeRef OWNAPI(cpBN_ThreeRef)
+   IPP_OWN_DECL (IppsBigNumState*, cpBN_ThreeRef, (void))
 
 #define BN_ONE_REF()   cpBN_OneRef()
 #define BN_TWO_REF()   cpBN_TwoRef()

@@ -30,6 +30,7 @@
 
 #include "pcpbn.h"
 #include "pcpmontgomery.h"
+#include "pcpngmontexpstuff.h"
 
 struct _cpRSA_public_key {
    Ipp32u         id;            /* key ID */
@@ -107,71 +108,16 @@ struct _cpRSA_private_key {
 // Montgomery engine preparation (GetSize/init/Set)
 */
 #define rsaMontExpGetSize OWNAPI(rsaMontExpGetSize)
-   void rsaMontExpGetSize (int length, int* pSize);
+   IPP_OWN_DECL (void, rsaMontExpGetSize, (int length, int* pSize))
 
 /*
 // pubic and private key operations
 */
 #define gsRSApub_cipher OWNAPI(gsRSApub_cipher)
-   void gsRSApub_cipher (IppsBigNumState* pY, const IppsBigNumState* pX, const IppsRSAPublicKeyState* pKey, BNU_CHUNK_T* pScratchBuffer);
+   IPP_OWN_DECL (void, gsRSApub_cipher, (IppsBigNumState* pY, const IppsBigNumState* pX, const IppsRSAPublicKeyState* pKey, BNU_CHUNK_T* pScratchBuffer))
 #define gsRSAprv_cipher OWNAPI(gsRSAprv_cipher)
-   void gsRSAprv_cipher (IppsBigNumState* pY, const IppsBigNumState* pX, const IppsRSAPrivateKeyState* pKey, BNU_CHUNK_T* pScratchBuffer);
+   IPP_OWN_DECL (void, gsRSAprv_cipher, (IppsBigNumState* pY, const IppsBigNumState* pX, const IppsRSAPrivateKeyState* pKey, BNU_CHUNK_T* pScratchBuffer))
 #define gsRSAprv_cipher_crt OWNAPI(gsRSAprv_cipher_crt)
-   void gsRSAprv_cipher_crt (IppsBigNumState* pY, const IppsBigNumState* pX, const IppsRSAPrivateKeyState* pKey, BNU_CHUNK_T* pScratchBuffer);
+   IPP_OWN_DECL (void, gsRSAprv_cipher_crt, (IppsBigNumState* pY, const IppsBigNumState* pX, const IppsRSAPrivateKeyState* pKey, BNU_CHUNK_T* pScratchBuffer))
 
 #endif /* _CP_NG_RSA_H */
-
-#if !defined(_CP_NG_RSA_METHOD_H)
-#define _CP_NG_RSA_METHOD_H
-
-/*
-// declaration of RSA exponentiation
-*/
-typedef cpSize (*ngBufNum) (int modulusBits);
-typedef cpSize (*ngMontExp) (BNU_CHUNK_T* dataY, const BNU_CHUNK_T* dataX, cpSize nsX, const BNU_CHUNK_T* dataE, cpSize nbitsE, gsModEngine* pMont, BNU_CHUNK_T* pBuffer);
-typedef cpSize (*ngMontDualExp) (BNU_CHUNK_T* dataY[2], const BNU_CHUNK_T* dataX[2], cpSize nsX[2], const BNU_CHUNK_T* dataE[2], gsModEngine* pMont[2], BNU_CHUNK_T* pBuffer);
-
-
-typedef struct _gsMethod_RSA {
-   int loModulusBisize;       // application area (lowew
-   int hiModulusBisize;       // and upper)
-   ngBufNum  bufferNumFunc;   // pub operation buffer in BNU_CHUNK_T
-   ngMontExp expFun;          // exponentiation
-   ngMontDualExp dualExpFun;  // dual exponentiation
-} gsMethod_RSA;
-
-
-/* GPR exponentiation */
-#define gsMethod_RSA_gpr_public OWNAPI(gsMethod_RSA_gpr_public)
-   gsMethod_RSA* gsMethod_RSA_gpr_public (void);
-#define gsMethod_RSA_gpr_private OWNAPI(gsMethod_RSA_gpr_private)
-   gsMethod_RSA* gsMethod_RSA_gpr_private (void);
-
-/* SSE2 exponentiation */
-#if (_IPP>=_IPP_W7)
-#define gsMethod_RSA_sse2_public OWNAPI(gsMethod_RSA_sse2_public)
-   gsMethod_RSA* gsMethod_RSA_sse2_public (void);
-#define gsMethod_RSA_sse2_private OWNAPI(gsMethod_RSA_sse2_private)
-   gsMethod_RSA* gsMethod_RSA_sse2_private (void);
-#endif /* _IPP_W7 */
-
-/* AVX2 exponentiation */
-#if (_IPP32E>=_IPP32E_L9)
-#define gsMethod_RSA_avx2_public OWNAPI(gsMethod_RSA_avx2_public)
-   gsMethod_RSA* gsMethod_RSA_avx2_public (void);
-#define gsMethod_RSA_avx2_private OWNAPI(gsMethod_RSA_avx2_private)
-   gsMethod_RSA* gsMethod_RSA_avx2_private (void);
-#endif /* _IPP32E_L9 */
-
-/* AVX512 exponentiation */
-#if (_IPP32E>=_IPP32E_K1)
-#define gsMethod_RSA_avx512_public OWNAPI(gsMethod_RSA_avx512_public)
-   gsMethod_RSA* gsMethod_RSA_avx512_public (void);
-#define gsMethod_RSA_avx512_private OWNAPI(gsMethod_RSA_avx512_private)
-   gsMethod_RSA* gsMethod_RSA_avx512_private (void);
-#define gsMethod_RSA_avx512_crt_private OWNAPI(gsMethod_RSA_avx512_crt_private)
-   gsMethod_RSA* gsMethod_RSA_avx512_crt_private (int privExpBitSize);
-#endif /* _IPP32E_K1 */
-
-#endif /* _CP_NG_RSA_METHOD_H */
-

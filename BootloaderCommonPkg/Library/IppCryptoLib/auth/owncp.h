@@ -1,17 +1,18 @@
 /*******************************************************************************
-* Copyright 2017-2020 Intel Corporation
+* Copyright (C) 2002 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
 /*
@@ -37,24 +38,20 @@
 /*
 // modes of the CPU feature
 */
-#define _FEATURE_OFF_      (0)   /* feature is OFF a priori */
-#define _FEATURE_ON_       (1)   /* feature is ON  a priori */
-#define _FEATURE_TICKTOCK_ (2)   /* dectect is feature OFF/ON */
+#define _FEATURE_OFF_      (0)   /* feature is OFF */
+#define _FEATURE_ON_       (1)   /* feature is ON  */
+#define _FEATURE_TICKTOCK_ (2)   /* dectect if feature is OFF/ON */
 
 #define _ABL_
 #if defined(_ABL_)
 #include "pcpvariant_abl.h"
 #endif
 
-//#define _XMM7560_
-#if defined(_XMM7560_)
-#  include "pcpvariant_xmm7560.h"
-#  pragma message ("standard configuration (pcpvariant.h) will be changed")
-#endif
-
 #include "pcpvariant.h"
 
-// #pragma warning( disable : 4996 4324 4206)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) // for MSVC
+#pragma warning(disable : 4324) // structures padding warning
+#endif
 
 /* ippCP length */
 typedef int cpSize;
@@ -91,6 +88,7 @@ typedef int cpSize;
 
 /* WORD and DWORD manipulators */
 #define IPP_LODWORD(x)    ((Ipp32u)(x))
+
 #if defined(_SLIMBOOT_OPT)
   #define IPP_HIDWORD(x)    ((Ipp32u)((RShiftU64((Ipp64u)(x), 32)) & 0xFFFFFFFF))
 #else
@@ -99,8 +97,9 @@ typedef int cpSize;
 
 #define IPP_MAKEHWORD(bLo,bHi) ((Ipp16u)(((Ipp8u)(bLo))  | ((Ipp16u)((Ipp8u)(bHi))) << 8))
 #define IPP_MAKEWORD(hLo,hHi)  ((Ipp32u)(((Ipp16u)(hLo)) | ((Ipp32u)((Ipp16u)(hHi))) << 16))
+
 #if defined(_SLIMBOOT_OPT)
-  #define IPP_MAKEDWORD(wLo,wHi) ((Ipp64u)((Ipp32u)(wLo)) | ((Ipp64u)LShiftU64 ((Ipp32u)(wHi), 32)))
+  #define IPP_MAKEDWORD(wLo,wHi) ((Ipp64u)(((Ipp32u)(wLo)) | LShiftU64(((Ipp64u)((Ipp32u)(wHi))), 32)))
 #else
   #define IPP_MAKEDWORD(wLo,wHi) ((Ipp64u)(((Ipp32u)(wLo)) | ((Ipp64u)((Ipp32u)(wHi))) << 32))
 #endif
@@ -130,54 +129,52 @@ typedef int cpSize;
 
 /* Rorate (right and left) of WORD */
 #if defined(_SLIMBOOT_OPT)
-
   #define ROR32(x, nBits)  RRotU32((x),(nBits))
   #define ROL32(x, nBits)  LRotU32((x),(nBits))
+#elif defined(_MSC_VER) && !defined( __ICL )
+  #include <stdlib.h>
+  #define ROR32(x, nBits)  _lrotr((x),(nBits)) 
+  #define ROL32(x, nBits)  _lrotl((x),(nBits))
+#else
+  #define ROR32(x, nBits) (LSR32((x),(nBits)) | LSL32((x),32-(nBits)))
+  #define ROL32(x, nBits) ROR32((x),(32-(nBits)))
+#endif
 
-  /* Logical Shifts (right and left) of DWORD */
+/* Logical Shifts (right and left) of DWORD */
+#if defined(_SLIMBOOT_OPT)
   #define LSR64(x,nBits)   RShiftU64((x),(nBits))
   #define LSL64(x,nBits)   LShiftU64((x),(nBits))
+#else
+  #define LSR64(x,nBits)  ((x)>>(nBits))
+  #define LSL64(x,nBits)  ((x)<<(nBits))
+#endif
 
-  /* Rorate (right and left) of DWORD */
+/* Rorate (right and left) of DWORD */
+#if defined(_SLIMBOOT_OPT)
   #define ROR64(x, nBits)  RRotU64((x),(nBits))
   #define ROL64(x, nBits)  LRotU64((x),(nBits))
+#else
+  #define ROR64(x, nBits) (LSR64((x),(nBits)) | LSL64((x),64-(nBits)))
+  #define ROL64(x, nBits) ROR64((x),(64-(nBits)))
+#endif
 
+/* change endian */
+#if defined(_SLIMBOOT_OPT)
   #define ENDIANNESS(x)    SwapBytes32((x))
   #define ENDIANNESS32(x)  ENDIANNESS((x))
   #define ENDIANNESS64(x)  SwapBytes64((x))
-
+#elif defined(_MSC_VER)
+#  define ENDIANNESS(x)   _byteswap_ulong((x))
+#  define ENDIANNESS32(x)  ENDIANNESS((x))
+#  define ENDIANNESS64(x) _byteswap_uint64((x))
+#elif defined(__ICL)
+#  define ENDIANNESS(x)   _bswap((x))
+#  define ENDIANNESS32(x)  ENDIANNESS((x))
+#  define ENDIANNESS64(x) _bswap64((x))
 #else
-  #if defined(_MSC_VER) && !defined( __ICL )
-  #  include <stdlib.h>
-  #  define ROR32(x, nBits)  _lrotr((x),(nBits))
-  #  define ROL32(x, nBits)  _lrotl((x),(nBits))
-  #else
-  #  define ROR32(x, nBits) (LSR32((x),(nBits)) | LSL32((x),32-(nBits)))
-  #  define ROL32(x, nBits) ROR32((x),(32-(nBits)))
-  #endif
-
-  /* Logical Shifts (right and left) of DWORD */
-  #define LSR64(x,nBits)  ((x)>>(nBits))
-  #define LSL64(x,nBits)  ((x)<<(nBits))
-
-  /* Rorate (right and left) of DWORD */
-  #define ROR64(x, nBits) (LSR64((x),(nBits)) | LSL64((x),64-(nBits)))
-  #define ROL64(x, nBits) ROR64((x),(64-(nBits)))
-
-  /* change endian */
-  #if defined(_MSC_VER)
-  #  define ENDIANNESS(x)   _byteswap_ulong((x))
-  #  define ENDIANNESS32(x)  ENDIANNESS((x))
-  #  define ENDIANNESS64(x) _byteswap_uint64((x))
-  #elif defined(__ICL)
-  #  define ENDIANNESS(x)   _bswap((x))
-  #  define ENDIANNESS32(x)  ENDIANNESS((x))
-  #  define ENDIANNESS64(x) _bswap64((x))
-  #else
-  #  define ENDIANNESS(x) ((ROR32((x), 24) & 0x00ff00ff) | (ROR32((x), 8) & 0xff00ff00))
-  #  define ENDIANNESS32(x) ENDIANNESS((x))
-  #  define ENDIANNESS64(x) IPP_MAKEDWORD(ENDIANNESS(IPP_HIDWORD((x))), ENDIANNESS(IPP_LODWORD((x))))
-  #endif
+#  define ENDIANNESS(x) ((ROR32((x), 24) & 0x00ff00ff) | (ROR32((x), 8) & 0xff00ff00))
+#  define ENDIANNESS32(x) ENDIANNESS((x))
+#  define ENDIANNESS64(x) IPP_MAKEDWORD(ENDIANNESS(IPP_HIDWORD((x))), ENDIANNESS(IPP_LODWORD((x))))
 #endif
 
 #define IPP_MAKE_MULTIPLE_OF_8(x) ((x) = ((x)+7)&(~7))
@@ -192,7 +189,7 @@ typedef int cpSize;
 
 /* define 64-bit constant or pair of 32-bit dependding on architecture */
 #if ((_IPP_ARCH == _IPP_ARCH_EM64T) || (_IPP_ARCH == _IPP_ARCH_LP64) || (_IPP_ARCH == _IPP_ARCH_LRB) || (_IPP_ARCH == _IPP_ARCH_LRB2))
-#define LL(lo,hi) ((Ipp64u)(((Ipp32u)(lo)) | ((Ipp64u)((Ipp32u)(hi))) << 32))
+#define LL(lo,hi) (((Ipp64u)(lo)) | ((Ipp64u)(hi) << 32))
 #define L_(lo)    ((Ipp64u)(lo))
 #else
 #define LL(lo,hi) (lo),(hi)
@@ -218,7 +215,7 @@ __INLINE Ipp32u IsFeatureEnabled(Ipp64u niMmask)
    for(i=0; i<(len); i++) (dst)[i] = ((mask) & (src1)[i]) | (~(mask) & (src2)[i]); \
 }
 
-#if (_IPP > _IPP_PX || _IPP32E > _IPP32E_PX) && !defined(__INTEL_COMPILER)
+#if (_IPP > _IPP_PX || _IPP32E > _IPP32E_PX) && !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER)
 #if !defined( _M_X64 ) && defined ( _MSC_VER )
 __inline __m128i
 _mm_cvtsi64_si128(__int64 a)

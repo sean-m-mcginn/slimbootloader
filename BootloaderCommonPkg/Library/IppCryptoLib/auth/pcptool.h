@@ -55,7 +55,7 @@ __INLINE void CopyBlock8(const void* pSrc, void* pDst)
 
 /* Because of the incorrect inlining with ICX compiler definition of CopyBlock16 function was moved to pcptool.c */ 
 #define CopyBlock16 OWNAPI(CopyBlock16)
-void CopyBlock16 (const void* pSrc, void* pDst);
+IPP_OWN_DECL (void, CopyBlock16, (const void* pSrc, void* pDst)) 
 
 __INLINE void CopyBlock24(const void* pSrc, void* pDst)
 {
@@ -97,7 +97,7 @@ __INLINE void PurgeBlock(void* pDst, int len)
 }
 #else
 #define PurgeBlock OWNAPI(PurgeBlock)
-    void PurgeBlock (void* pDst, int len);
+    IPP_OWN_DECL (void, PurgeBlock, (void* pDst, int len))
 #endif
 
 /* fill block */
@@ -145,7 +145,7 @@ __INLINE void XorBlock8(const void* pSrc1, const void* pSrc2, void* pDst)
 
 // Because of the incorrect inlining definition of XorBlock16 function was moved to pcptool.c
 #define XorBlock16 OWNAPI(XorBlock16)
-    void XorBlock16 (const void* pSrc1, const void* pSrc2, void* pDst);
+IPP_OWN_DECL (void, XorBlock16, (const void* pSrc1, const void* pSrc2, void* pDst))
 
 __INLINE void XorBlock24(const void* pSrc1, const void* pSrc2, void* pDst)
 {

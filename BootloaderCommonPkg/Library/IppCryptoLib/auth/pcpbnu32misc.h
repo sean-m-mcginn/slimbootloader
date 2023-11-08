@@ -1,17 +1,18 @@
 /*******************************************************************************
-* Copyright 2002-2020 Intel Corporation
+* Copyright (C) 2002 Intel Corporation
 *
-* Licensed under the Apache License, Version 2.0 (the "License");
+* Licensed under the Apache License, Version 2.0 (the 'License');
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
+* 
+* http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an 'AS IS' BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+* See the License for the specific language governing permissions
+* and limitations under the License.
+* 
 *******************************************************************************/
 
 /*
@@ -32,7 +33,7 @@
 /* number of leading/trailing zeros */
 #if (_IPP < _IPP_H9)
 #define cpNLZ_BNU32 OWNAPI(cpNLZ_BNU32)
-   cpSize cpNLZ_BNU32 (Ipp32u x);
+   IPP_OWN_DECL (cpSize, cpNLZ_BNU32, (Ipp32u x))
 #else
    __INLINE cpSize cpNLZ_BNU32(Ipp32u x)
    {
@@ -90,8 +91,8 @@ __INLINE int cpCmp_BNU32(const Ipp32u* pA, cpSize nsA, const Ipp32u* pB, cpSize 
 
 /* to/from oct string conversion */
 #define cpToOctStr_BNU32 OWNAPI(cpToOctStr_BNU32)
-cpSize  cpToOctStr_BNU32(Ipp8u* pStr, cpSize strLen, const Ipp32u* pBNU, cpSize bnuSize);
+   IPP_OWN_DECL (cpSize, cpToOctStr_BNU32, (Ipp8u* pStr, cpSize strLen, const Ipp32u* pBNU, cpSize bnuSize))
 #define cpFromOctStr_BNU32 OWNAPI(cpFromOctStr_BNU32)
-cpSize  cpFromOctStr_BNU32(Ipp32u* pBNU, const Ipp8u* pOctStr, cpSize strLen);
+   IPP_OWN_DECL (cpSize, cpFromOctStr_BNU32, (Ipp32u* pBNU, const Ipp8u* pOctStr, cpSize strLen))
 
 #endif /* _CP_BNU32_MISC_H */
