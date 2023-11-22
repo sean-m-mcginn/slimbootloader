@@ -1088,7 +1088,7 @@ CaculateAuthorityPCRExtendValue (
   DEBUG ((DEBUG_INFO, "AuthorityPcrData:\n"));
 
   // 1. Get ACM Policy Status
-  ((AUTHORITY_PCR_DATA*)AuthorityPcrDataPtr)->AcmPolicySts = 0; //GetAcmPolicySts ();
+  ((AUTHORITY_PCR_DATA*)AuthorityPcrDataPtr)->AcmPolicySts = GetAcmPolicySts ();
   DEBUG ((DEBUG_INFO, "AcmPolicySts  - 0x%04lx\n", ((AUTHORITY_PCR_DATA*)AuthorityPcrDataPtr)->AcmPolicySts));
   // 2. Get ACM SVN
   ((AUTHORITY_PCR_DATA*)AuthorityPcrDataPtr)->AcmSvn = Acm->AcmSvn;
