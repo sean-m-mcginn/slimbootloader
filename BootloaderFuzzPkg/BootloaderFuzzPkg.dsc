@@ -52,7 +52,6 @@
   LocalApicLib|BootloaderCommonPkg/Library/BaseXApicX2ApicLib/BaseXApicX2ApicLib.inf
   SecureBootLib|BootloaderCommonPkg/Library/SecureBootLib/SecureBootLib.inf
   TpmLib|BootloaderCommonPkg/Library/TpmLib/TpmLib.inf
-  BootloaderCommonLib|BootloaderCommonPkg/Library/BootloaderCommonLib/BootloaderCommonLib.inf
   ConfigDataLib|BootloaderCommonPkg/Library/ConfigDataLib/ConfigDataLib.inf
   MmcAccessLib|BootloaderCommonPkg/Library/MmcAccessLib/MmcAccessLib.inf
   GraphicsLib|BootloaderCommonPkg/Library/GraphicsLib/GraphicsLib.inf
@@ -113,12 +112,15 @@
   ToolChainHarnessLib|UefiHostFuzzTestPkg/Library/ToolChainHarnessLib/ToolChainHarnessLib.inf
   BaseMemoryLib|UefiHostTestPkg/Library/BaseMemoryLibHost/BaseMemoryLibHost.inf
   Tpm2PtpStub|BootloaderFuzzPkg/TestStub/BootloaderCommonPkg/Library/TpmLib/Tpm2PtpStub.inf
+  HashStub|BootloaderFuzzPkg/TestStub/BootloaderCommonPkg/Library/SecureBootLib/HashStub.inf
+  BootloaderCommonStub|BootloaderFuzzPkg/TestStub/BootloaderCommonPkg/Library/SecureBootLib/BootloaderCommonStub.inf
 
 [LibraryClasses.common.USER_DEFINED]
 
 [Components]
   BootloaderFuzzPkg/TestCase/BootloaderCommonPkg/Library/TpmLib/TestTpm2Capability.inf
   BootloaderFuzzPkg/TestCase/BootloaderCommonPkg/Library/TpmLib/TestTpm2Hierarchy.inf
+  BootloaderFuzzPkg/TestCase/BootloaderCommonPkg/Library/SecureBootLib/TestSecureBootHash.inf
 
 [PcdsDynamicDefault]
 

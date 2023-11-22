@@ -1,0 +1,41 @@
+## @file
+# Component description file for TestTpm2CommandLib module.
+#
+# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = TestSecureBootHash
+  FILE_GUID                      = D8FF50EB-399E-48EB-8C0B-DC3107000C92
+  MODULE_TYPE                    = USER_DEFINED
+  VERSION_STRING                 = 1.0
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  TestSecureBootHash.c
+  BootloaderCommonPkg/Library/SecureBootLib/SecureBootHash.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  BootloaderFuzzPkg/BootloaderFuzzPkg.dec
+  BootloaderCommonPkg/BootloaderCommonPkg.dec
+  BootloaderCorePkg/BootloaderCorePkg.dec
+  UefiHostTestPkg/UefiHostTestPkg.dec
+  UefiHostFuzzTestPkg/UefiHostFuzzTestPkg.dec
+
+[LibraryClasses]
+  HashStub
+  BootloaderCommonStub
+  BaseLib
+  ToolChainHarnessLib
+  MemoryAllocationLib
+  BootloaderCoreLib
+  SerialPortLib

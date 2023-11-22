@@ -105,7 +105,7 @@ DumpHex (
       Size = DataSize;
     }
 
-    for (Index = 0; Index < Size; Index += 1) {
+    for (Index = 0; Index < Size && Data + Index != NULL; Index += 1) {
       TempByte            = Data[Index];
       Val[Index * 3 + 0]  = mHex[TempByte >> 4];
       Val[Index * 3 + 1]  = mHex[TempByte & 0xF];

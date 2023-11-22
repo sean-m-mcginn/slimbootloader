@@ -7,11 +7,11 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = Tpm2PtpStub
-  FILE_GUID                      = E54A3327-A345-4068-8842-70AC0D519855
+  BASE_NAME                      = HashStub
+  FILE_GUID                      = 2A696C3F-B7E8-4957-B1D9-C3522000AB96
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = Tpm2PtpStub
+  LIBRARY_CLASS                  = Sha256Stub
 
 #
 # The following information is for reference only and not required by the build tools.
@@ -20,7 +20,7 @@
 #
 
 [Sources]
-  Tpm2PtpStub.c
+  HashStub.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -30,4 +30,3 @@
 [LibraryClasses]
   BaseLib
   BaseMemoryLib
-  DebugLib
